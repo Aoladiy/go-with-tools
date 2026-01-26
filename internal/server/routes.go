@@ -16,21 +16,40 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true, // Enable cookies/auth
 	}))
+	apiV1 := r.Group("/api/v1")
+	apiV1.GET("/health", s.healthHandler)
+	apiV1.GET("/hello", s.HelloWorldHandler)
+	apiV1.GET("/categories", s.CategoriesHandler)
+	apiV1.GET("/brands", s.BrandsHandler)
+	apiV1.GET("/products", s.ProductsHandler)
 
-	r.GET("/", s.HelloWorldHandler)
+	admin := apiV1.Group("/admin")
+	admin.Use(authByJWT())
+	admin.POST("/login", s.LoginHandler)
+	admin.POST("/logout", s.LogoutHandler)
 
-	r.GET("/health", s.healthHandler)
+	products := admin.Group("/products")
+	products.POST("", s.CreateProductHandler)
+	products.GET("", s.GetAllProductHandler)
+	products.GET("/:id", s.GetProductHandler)
+	products.PATCH("/:id", s.UpdateProductHandler)
+	products.DELETE("/:id", s.DeleteProductHandler)
+
+	brands := admin.Group("/brands")
+	brands.POST("", s.CreateBrandHandler)
+	brands.GET("", s.GetAllBrandHandler)
+	brands.GET("/:id", s.GetBrandHandler)
+	brands.PATCH("/:id", s.UpdateBrandHandler)
+	brands.DELETE("/:id", s.DeleteBrandHandler)
+
+	categories := admin.Group("/categories")
+	categories.POST("", s.CreateCategoryHandler)
+	categories.GET("", s.GetAllCategoryHandler)
+	categories.GET("/:id", s.GetCategoryHandler)
+	categories.PATCH("/:id", s.UpdateCategoryHandler)
+	categories.DELETE("/:id", s.DeleteCategoryHandler)
+
+	admin.POST("/inventory/adjustments", s.CreateInventoryMovementHandler)
 
 	return r
-}
-
-func (s *Server) HelloWorldHandler(c *gin.Context) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-
-	c.JSON(http.StatusOK, resp)
-}
-
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
 }
