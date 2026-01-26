@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -29,16 +30,19 @@ type service struct {
 }
 
 var (
-	database   = os.Getenv("BLUEPRINT_DB_DATABASE")
-	password   = os.Getenv("BLUEPRINT_DB_PASSWORD")
-	username   = os.Getenv("BLUEPRINT_DB_USERNAME")
-	port       = os.Getenv("BLUEPRINT_DB_PORT")
-	host       = os.Getenv("BLUEPRINT_DB_HOST")
-	schema     = os.Getenv("BLUEPRINT_DB_SCHEMA")
-	dbInstance *service
+	database, databaseExists = os.LookupEnv("BLUEPRINT_DB_DATABASE")
+	password, passwordExists = os.LookupEnv("BLUEPRINT_DB_PASSWORD")
+	username, usernameExists = os.LookupEnv("BLUEPRINT_DB_USERNAME")
+	port, portExists         = os.LookupEnv("BLUEPRINT_DB_PORT")
+	host, hostExists         = os.LookupEnv("BLUEPRINT_DB_HOST")
+	schema, schemaExists     = os.LookupEnv("BLUEPRINT_DB_SCHEMA")
+	dbInstance               *service
 )
 
 func New() Service {
+	if !databaseExists || !passwordExists || !usernameExists || !portExists || !hostExists || !schemaExists {
+		log.Fatalln(errors.New("some database variables are not set in .env file"))
+	}
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
