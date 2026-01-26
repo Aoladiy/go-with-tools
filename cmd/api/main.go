@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -39,17 +40,17 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 
 func main() {
 
-	server := server.NewServer()
+	newServer := server.NewServer()
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, done)
+	go gracefulShutdown(newServer, done)
 
-	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		panic(fmt.Sprintf("http server error: %s", err))
+	err := newServer.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		panic(fmt.Sprintf("http newServer error: %s", err))
 	}
 
 	// Wait for the graceful shutdown to complete
