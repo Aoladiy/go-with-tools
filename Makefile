@@ -61,4 +61,15 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest
+DB_USER ?= go_with_tools_user
+DB_NAME ?= go_with_tools_db
+SCHEMA  := internal/database/schema.sql
+
+db-schema:
+	pg_dump -U $(DB_USER) -d $(DB_NAME) --schema-only -f $(SCHEMA)
+	sed -i '/^\\restrict\b/d; /^\\unrestrict\b/d' $(SCHEMA)
+
+sqlc: db-schema
+	sqlc generate
+
+.PHONY: all build run test clean watch docker-run docker-down itest db-schema sqlc

@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-with-tools/internal/server"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"go-with-tools/internal/server"
 )
 
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
+func gracefulShutdown(apiServer *server.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -28,7 +27,8 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
+	err := apiServer.ShutdownServer(ctx)
+	if err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
@@ -48,7 +48,7 @@ func main() {
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(newServer, done)
 
-	err := newServer.ListenAndServe()
+	err := newServer.Server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Sprintf("http newServer error: %s", err))
 	}

@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"go-with-tools/internal/database/queries"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,19 +17,23 @@ import (
 type Server struct {
 	port int
 
-	db database.Service
+	db     database.Service
+	q      *queries.Queries
+	Server *http.Server
 }
 
-func NewServer() *http.Server {
+func NewServer() *Server {
 	portEnv, exists := os.LookupEnv("PORT")
 	if !exists {
 		portEnv = "8080"
 	}
 	port, _ := strconv.Atoi(portEnv)
+	db := database.New()
 	newServer := &Server{
 		port: port,
 
-		db: database.New(),
+		db: db,
+		q:  queries.New(db.GetPool()),
 	}
 
 	// Declare Server config
@@ -38,6 +44,15 @@ func NewServer() *http.Server {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
+	newServer.Server = server
 
-	return server
+	return newServer
+}
+
+func (s *Server) ShutdownServer(ctx context.Context) error {
+	if err := s.Server.Shutdown(ctx); err != nil {
+		return err
+	}
+	s.db.Close()
+	return nil
 }

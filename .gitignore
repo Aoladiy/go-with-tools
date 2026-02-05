@@ -32,3 +32,5 @@ main
 # OS X generated file
 .DS_Store
 
+internal/database/schema.sql
+internal/database/queries
