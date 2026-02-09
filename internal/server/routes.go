@@ -1,6 +1,7 @@
 package server
 
 import (
+	"go-with-tools/internal/middleware"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
@@ -24,7 +25,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	apiV1.GET("/products", s.ProductsHandler)
 
 	admin := apiV1.Group("/admin")
-	admin.Use(authByJWT())
+	admin.Use(middleware.AuthByJWT())
 	admin.POST("/login", s.LoginHandler)
 	admin.POST("/logout", s.LogoutHandler)
 

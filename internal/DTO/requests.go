@@ -1,4 +1,4 @@
-package server
+package DTO
 
 type CreateBrandRequest struct {
 	Name string

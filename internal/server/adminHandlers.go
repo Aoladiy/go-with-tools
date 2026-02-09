@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/helpers"
 	"log"
@@ -41,21 +42,11 @@ func (s *Server) DeleteProductHandler(c *gin.Context) {
 }
 
 func (s *Server) CreateBrandHandler(c *gin.Context) {
-	var request CreateBrandRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	brand, err := s.q.CreateBrand(c.Request.Context(), queries.CreateBrandParams{
-		Name: request.Name,
-		Slug: request.Slug,
-	})
+	brand, err := s.createBrandService(c)
 	if err != nil {
-		log.Println("error creating brand", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		helpers.ErrorResponse(c, err)
 		return
 	}
-
 	c.JSON(http.StatusCreated, brand)
 	return
 }
@@ -93,7 +84,7 @@ func (s *Server) GetBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) UpdateBrandHandler(c *gin.Context) {
-	var updateBrandRequest UpdateBrandRequest
+	var updateBrandRequest DTO.UpdateBrandRequest
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println("error deleting brand", err)
