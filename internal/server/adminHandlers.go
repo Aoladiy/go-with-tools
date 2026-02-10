@@ -41,7 +41,7 @@ func (s *Server) CreateBrandHandler(c *gin.Context) {
 		fail(c, "error binding json", err)
 		return
 	}
-	brand, err := s.createBrandService(c.Request.Context(), request)
+	brand, err := s.brand.Create(c.Request.Context(), request)
 	if err != nil {
 		fail(c, "error creating brand", err)
 		return
@@ -50,7 +50,7 @@ func (s *Server) CreateBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) GetAllBrandHandler(c *gin.Context) {
-	brands, err := s.GetAllBrandService(c.Request.Context())
+	brands, err := s.brand.GetAll(c.Request.Context())
 	if err != nil {
 		fail(c, "cannot get all brands", err)
 		return
@@ -64,7 +64,7 @@ func (s *Server) GetBrandHandler(c *gin.Context) {
 		fail(c, "error getting path param", err)
 		return
 	}
-	brand, err := s.GetBrandService(c.Request.Context(), id)
+	brand, err := s.brand.Get(c.Request.Context(), id)
 	if err != nil {
 		fail(c, "cannot get brand by id", err)
 		return
@@ -83,7 +83,7 @@ func (s *Server) UpdateBrandHandler(c *gin.Context) {
 		fail(c, "error binding json", err)
 		return
 	}
-	brand, err := s.UpdateBrandService(c.Request.Context(), id, request)
+	brand, err := s.brand.Update(c.Request.Context(), id, request)
 	if err != nil {
 		fail(c, "error updating brand", err)
 		return
@@ -97,7 +97,7 @@ func (s *Server) DeleteBrandHandler(c *gin.Context) {
 		fail(c, "error getting path param", err)
 		return
 	}
-	_, err = s.DeleteBrandService(c.Request.Context(), id)
+	_, err = s.brand.Delete(c.Request.Context(), id)
 	if err != nil {
 		fail(c, "error deleting brand", err)
 		return

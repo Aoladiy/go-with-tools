@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-with-tools/internal/database/queries"
+	"go-with-tools/internal/services/brand"
 	"net/http"
 	"os"
 	"strconv"
@@ -20,6 +21,7 @@ type Server struct {
 	db     database.Service
 	q      *queries.Queries
 	Server *http.Server
+	brand  *brand.Service
 }
 
 func NewServer() *Server {
@@ -29,11 +31,12 @@ func NewServer() *Server {
 	}
 	port, _ := strconv.Atoi(portEnv)
 	db := database.New()
+	q := queries.New(db.GetPool())
 	newServer := &Server{
-		port: port,
-
-		db: db,
-		q:  queries.New(db.GetPool()),
+		port:  port,
+		db:    db,
+		q:     q,
+		brand: brand.New(q),
 	}
 
 	// Declare Server config
