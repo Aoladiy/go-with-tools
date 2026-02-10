@@ -1,15 +1,10 @@
 package server
 
 import (
-	"errors"
 	"go-with-tools/internal/DTO"
-	"go-with-tools/internal/database/queries"
-	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
 )
 
 func (s *Server) LoginHandler(c *gin.Context) {
@@ -43,7 +38,7 @@ func (s *Server) DeleteProductHandler(c *gin.Context) {
 func (s *Server) CreateBrandHandler(c *gin.Context) {
 	request, err := bindJson[DTO.CreateBrandRequest](c)
 	if err != nil {
-		fail(c, "error binding json while creating brand", err)
+		fail(c, "error binding json", err)
 		return
 	}
 	brand, err := s.createBrandService(c.Request.Context(), request)
@@ -55,77 +50,56 @@ func (s *Server) CreateBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) GetAllBrandHandler(c *gin.Context) {
-	brands, err := s.q.GetAllBrands(c.Request.Context())
+	brands, err := s.GetAllBrandService(c.Request.Context())
 	if err != nil {
-		log.Println("error getting brand", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fail(c, "cannot get all brands", err)
 		return
 	}
 	c.JSON(http.StatusOK, nonNilSlice(brands))
 }
 
 func (s *Server) GetBrandHandler(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIntPathParam(c, "id")
 	if err != nil {
-		log.Println("error getting brand", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fail(c, "error getting path param", err)
 		return
 	}
-	brand, err := s.q.GetBrand(c.Request.Context(), int64(id))
+	brand, err := s.GetBrandService(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{})
-		} else {
-			log.Println("error getting brand", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		fail(c, "cannot get brand by id", err)
 		return
 	}
 	c.JSON(http.StatusOK, brand)
 }
 
 func (s *Server) UpdateBrandHandler(c *gin.Context) {
-	var updateBrandRequest DTO.UpdateBrandRequest
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIntPathParam(c, "id")
 	if err != nil {
-		log.Println("error deleting brand", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fail(c, "error getting path param", err)
 		return
 	}
-	if err = c.ShouldBindJSON(&updateBrandRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	request, err := bindJson[DTO.UpdateBrandRequest](c)
+	if err != nil {
+		fail(c, "error binding json", err)
 		return
 	}
-	brand, err := s.q.UpdateBrand(c.Request.Context(), queries.UpdateBrandParams{
-		ID:   int64(id),
-		Name: updateBrandRequest.Name,
-		Slug: updateBrandRequest.Slug,
-	})
+	brand, err := s.UpdateBrandService(c.Request.Context(), id, request)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		fail(c, "error updating brand", err)
 		return
 	}
 	c.JSON(http.StatusOK, brand)
 }
 
 func (s *Server) DeleteBrandHandler(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIntPathParam(c, "id")
 	if err != nil {
-		log.Println("error deleting brand", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fail(c, "error getting path param", err)
 		return
 	}
-	rows, err := s.q.DeleteBrand(c.Request.Context(), int64(id))
+	_, err = s.DeleteBrandService(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{})
+		fail(c, "error deleting brand", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success"})

@@ -3,6 +3,7 @@ package server
 import (
 	"go-with-tools/internal/errs"
 	"log"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +22,18 @@ func bindJson[T any](c *gin.Context) (T, *errs.AppError) {
 		return request, errs.BadRequest(err)
 	}
 	return request, nil
+}
+
+func getStringPathParam(c *gin.Context, param string) string {
+	return c.Param(param)
+}
+
+func getIntPathParam(c *gin.Context, param string) (int, *errs.AppError) {
+	pathParam, err := strconv.Atoi(c.Param(param))
+	if err != nil {
+		return 0, errs.BadRequest(err)
+	}
+	return pathParam, nil
 }
 
 func errorResponse(c *gin.Context, err *errs.AppError) {
