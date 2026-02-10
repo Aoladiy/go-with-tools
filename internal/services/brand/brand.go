@@ -24,6 +24,9 @@ func (s *Service) Create(ctx context.Context, request DTO.CreateBrandRequest) (q
 		Slug: request.Slug,
 	})
 	if err != nil {
+		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
+			return queries.Brand{}, errs.UniqueViolation(err, pgErr)
+		}
 		return queries.Brand{}, errs.Internal(err)
 	}
 

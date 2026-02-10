@@ -1,7 +1,10 @@
 package errs
 
 import (
+	"errors"
 	"net/http"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type AppError struct {
@@ -40,4 +43,28 @@ func BadRequest(err error) *AppError {
 		Code:    http.StatusBadRequest,
 		Err:     err,
 	}
+}
+
+func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
+	var msg string
+	switch pgErr.ConstraintName {
+	case "brands_name_key":
+		msg = "name already exists"
+	case "brands_slug_key":
+		msg = "slug already exists"
+	default:
+		msg = "unique violation"
+	}
+	return &AppError{
+		Message: msg,
+		Code:    http.StatusConflict,
+		Err:     err,
+	}
+}
+
+func IsUniqueViolation(err error) (pgErr *pgconn.PgError, isUniqueViolation bool) {
+	if err != nil && errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return pgErr, true
+	}
+	return nil, false
 }
