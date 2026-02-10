@@ -4,7 +4,6 @@ import (
 	"errors"
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
-	"go-with-tools/internal/helpers"
 	"log"
 	"net/http"
 	"strconv"
@@ -42,13 +41,17 @@ func (s *Server) DeleteProductHandler(c *gin.Context) {
 }
 
 func (s *Server) CreateBrandHandler(c *gin.Context) {
-	brand, err := s.createBrandService(c)
+	request, err := bindJson[DTO.CreateBrandRequest](c)
 	if err != nil {
-		helpers.ErrorResponse(c, err)
+		fail(c, "error binding json while creating brand", err)
+		return
+	}
+	brand, err := s.createBrandService(c.Request.Context(), request)
+	if err != nil {
+		fail(c, "error creating brand", err)
 		return
 	}
 	c.JSON(http.StatusCreated, brand)
-	return
 }
 
 func (s *Server) GetAllBrandHandler(c *gin.Context) {
@@ -58,8 +61,7 @@ func (s *Server) GetAllBrandHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, helpers.NonNil(brands))
-	return
+	c.JSON(http.StatusOK, nonNilSlice(brands))
 }
 
 func (s *Server) GetBrandHandler(c *gin.Context) {
@@ -80,7 +82,6 @@ func (s *Server) GetBrandHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, brand)
-	return
 }
 
 func (s *Server) UpdateBrandHandler(c *gin.Context) {
@@ -109,7 +110,6 @@ func (s *Server) UpdateBrandHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, brand)
-	return
 }
 
 func (s *Server) DeleteBrandHandler(c *gin.Context) {

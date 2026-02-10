@@ -1,7 +1,6 @@
 package server
 
 import (
-	"go-with-tools/internal/helpers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,7 @@ func (s *Server) HelloWorldHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, helpers.NonNil(brands))
+	c.JSON(http.StatusOK, nonNilSlice(brands))
 }
 
 func (s *Server) healthHandler(c *gin.Context) {
