@@ -52,6 +52,8 @@ func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
 		msg = "name already exists"
 	case "brands_slug_key":
 		msg = "slug already exists"
+	case "categories_slug_key":
+		msg = "slug already exists"
 	default:
 		msg = "unique violation"
 	}
@@ -64,6 +66,28 @@ func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
 
 func IsUniqueViolation(err error) (pgErr *pgconn.PgError, isUniqueViolation bool) {
 	if err != nil && errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return pgErr, true
+	}
+	return nil, false
+}
+
+func ForeignKeyViolation(err error, pgErr *pgconn.PgError) *AppError {
+	var msg string
+	switch pgErr.ConstraintName {
+	case "fk_categories_parent_id":
+		msg = "there is no category with such parent id"
+	default:
+		msg = "foreign key violation"
+	}
+	return &AppError{
+		Message: msg,
+		Code:    http.StatusUnprocessableEntity,
+		Err:     err,
+	}
+}
+
+func IsForeignKeyViolation(err error) (pgErr *pgconn.PgError, isUniqueViolation bool) {
+	if err != nil && errors.As(err, &pgErr) && pgErr.Code == "23503" {
 		return pgErr, true
 	}
 	return nil, false

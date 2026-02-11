@@ -1,10 +1,12 @@
 package DTO
 
-type CreateBrandRequest struct {
-	Name string
-	Slug string
+type BrandRequest struct {
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
-type UpdateBrandRequest struct {
-	Name string
-	Slug string
+
+type CategoryRequest struct {
+	Name     string `json:"name"`
+	Slug     string `json:"slug"`
+	ParentId *int   `json:"parent_id,omitempty"`
 }

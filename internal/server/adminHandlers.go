@@ -36,7 +36,7 @@ func (s *Server) DeleteProductHandler(c *gin.Context) {
 }
 
 func (s *Server) CreateBrandHandler(c *gin.Context) {
-	request, err := bindJson[DTO.CreateBrandRequest](c)
+	request, err := bindJson[DTO.BrandRequest](c)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -78,7 +78,7 @@ func (s *Server) UpdateBrandHandler(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	request, err := bindJson[DTO.UpdateBrandRequest](c)
+	request, err := bindJson[DTO.BrandRequest](c)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -106,23 +106,73 @@ func (s *Server) DeleteBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) CreateCategoryHandler(c *gin.Context) {
-	// TODO
+	request, err := bindJson[DTO.CategoryRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	category, err := s.category.Create(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, category)
 }
 
 func (s *Server) GetAllCategoryHandler(c *gin.Context) {
-	// TODO
+	categories, err := s.category.GetAll(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, nonNilSlice(categories))
 }
 
 func (s *Server) GetCategoryHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	category, err := s.category.Get(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, category)
 }
 
 func (s *Server) UpdateCategoryHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	request, err := bindJson[DTO.CategoryRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	category, err := s.category.Update(c.Request.Context(), id, request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, category)
 }
 
 func (s *Server) DeleteCategoryHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	_, err = s.category.Delete(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
 func (s *Server) CreateInventoryMovementHandler(c *gin.Context) {

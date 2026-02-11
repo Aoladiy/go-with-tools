@@ -25,7 +25,7 @@ func LogErrors() gin.HandlerFunc {
 			var appErr *errs.AppError
 			if errors.As(e.Err, &appErr) {
 				if cause := appErr.Unwrap(); cause != nil {
-					log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%s\" |caused by \"%v\"", c.Request.Method, c.FullPath(), appErr.Code, appErr, cause)
+					log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%s\" | caused by \"%v\"", c.Request.Method, c.FullPath(), appErr.Code, appErr, cause)
 				} else {
 					log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%s\"", c.Request.Method, c.FullPath(), appErr.Code, appErr)
 				}

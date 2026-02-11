@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/services/brand"
+	"go-with-tools/internal/services/category"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,10 +19,11 @@ import (
 type Server struct {
 	port int
 
-	db     database.Service
-	q      *queries.Queries
-	Server *http.Server
-	brand  *brand.Service
+	db       database.Service
+	q        *queries.Queries
+	Server   *http.Server
+	brand    *brand.Service
+	category *category.Service
 }
 
 func NewServer() *Server {
@@ -33,10 +35,11 @@ func NewServer() *Server {
 	db := database.New()
 	q := queries.New(db.GetPool())
 	newServer := &Server{
-		port:  port,
-		db:    db,
-		q:     q,
-		brand: brand.New(q),
+		port:     port,
+		db:       db,
+		q:        q,
+		brand:    brand.New(q),
+		category: category.New(q),
 	}
 
 	// Declare Server config
