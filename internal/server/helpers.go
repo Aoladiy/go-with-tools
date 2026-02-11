@@ -2,7 +2,6 @@ package server
 
 import (
 	"go-with-tools/internal/errs"
-	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -36,15 +35,7 @@ func getIntPathParam(c *gin.Context, param string) (int, *errs.AppError) {
 	return pathParam, nil
 }
 
-func errorResponse(c *gin.Context, err *errs.AppError) {
+func respondError(c *gin.Context, err *errs.AppError) {
+	_ = c.Error(err)
 	c.JSON(err.Code, gin.H{"error": err.Error()})
-}
-
-func fail(c *gin.Context, message string, appError *errs.AppError) {
-	if cause := appError.Unwrap(); cause != nil {
-		log.Printf("%s %s %s (is caused by %v)", c.Request.Method, c.FullPath(), message, cause)
-	} else {
-		log.Printf("%s %s %s (error %v)", c.Request.Method, c.FullPath(), message, appError)
-	}
-	errorResponse(c, appError)
 }
