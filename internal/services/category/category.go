@@ -89,9 +89,10 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.CategoryResponse, *errs.
 
 func (s *Service) Update(ctx context.Context, id int, request DTO.CategoryRequest) (DTO.CategoryResponse, *errs.AppError) {
 	category, err := s.q.UpdateCategory(ctx, queries.UpdateCategoryParams{
-		ID:   int64(id),
-		Name: request.Name,
-		Slug: request.Slug,
+		ID:       int64(id),
+		Name:     request.Name,
+		Slug:     request.Slug,
+		ParentID: helpers.ToPgInt8(request.ParentId),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -118,7 +119,7 @@ func (s *Service) Delete(ctx context.Context, id int) (int, *errs.AppError) {
 		return 0, errs.Internal(err)
 	}
 	if rows == 0 {
-		return int(rows), errs.NotFound(err)
+		return int(rows), errs.NotFound(errors.New("category not found"))
 	}
 	return int(rows), nil
 }

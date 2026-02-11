@@ -102,7 +102,7 @@ func (s *Server) DeleteBrandHandler(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.Status(http.StatusNoContent)
 }
 
 func (s *Server) CreateCategoryHandler(c *gin.Context) {
@@ -172,7 +172,7 @@ func (s *Server) DeleteCategoryHandler(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.Status(http.StatusNoContent)
 }
 
 func (s *Server) CreateInventoryMovementHandler(c *gin.Context) {

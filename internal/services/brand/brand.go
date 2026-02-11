@@ -110,7 +110,7 @@ func (s *Service) Delete(ctx context.Context, id int) (int, *errs.AppError) {
 		return 0, errs.Internal(err)
 	}
 	if rows == 0 {
-		return int(rows), errs.NotFound(err)
+		return int(rows), errs.NotFound(errors.New("brand not found"))
 	}
 	return int(rows), nil
 }
