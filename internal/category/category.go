@@ -40,8 +40,8 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 		Name:      category.Name,
 		Slug:      category.Slug,
 		ParentId:  helpers.ParsePgInt8(category.ParentID),
-		CreatedAt: helpers.ParsePgTimestamptz(category.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(category.UpdatedAt),
+		CreatedAt: category.CreatedAt,
+		UpdatedAt: category.UpdatedAt,
 	}
 	return categoryResponse, nil
 }
@@ -59,8 +59,8 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.App
 			Name:      category.Name,
 			Slug:      category.Slug,
 			ParentId:  helpers.ParsePgInt8(category.ParentID),
-			CreatedAt: helpers.ParsePgTimestamptz(category.CreatedAt),
-			UpdatedAt: helpers.ParsePgTimestamptz(category.UpdatedAt),
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
 		}
 	}
 	return categoriesResponse, nil
@@ -81,8 +81,8 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.CategoryResponse, *errs.
 		Name:      category.Name,
 		Slug:      category.Slug,
 		ParentId:  helpers.ParsePgInt8(category.ParentID),
-		CreatedAt: helpers.ParsePgTimestamptz(category.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(category.UpdatedAt),
+		CreatedAt: category.CreatedAt,
+		UpdatedAt: category.UpdatedAt,
 	}
 	return categoryResponse, nil
 }
@@ -98,7 +98,12 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.CategoryReques
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.CategoryResponse{}, errs.NotFound(err)
 		}
-
+		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
+			return DTO.CategoryResponse{}, errs.UniqueViolation(err, pgErr)
+		}
+		if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
+			return DTO.CategoryResponse{}, errs.ForeignKeyViolation(err, pgErr)
+		}
 		return DTO.CategoryResponse{}, errs.Internal(err)
 	}
 
@@ -107,8 +112,8 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.CategoryReques
 		Name:      category.Name,
 		Slug:      category.Slug,
 		ParentId:  helpers.ParsePgInt8(category.ParentID),
-		CreatedAt: helpers.ParsePgTimestamptz(category.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(category.UpdatedAt),
+		CreatedAt: category.CreatedAt,
+		UpdatedAt: category.UpdatedAt,
 	}
 	return categoryResponse, nil
 }

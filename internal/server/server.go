@@ -3,9 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
+	"go-with-tools/internal/brand"
+	"go-with-tools/internal/category"
 	"go-with-tools/internal/database/queries"
-	"go-with-tools/internal/services/brand"
-	"go-with-tools/internal/services/category"
+	"go-with-tools/internal/product"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,6 +25,7 @@ type Server struct {
 	Server   *http.Server
 	brand    *brand.Service
 	category *category.Service
+	product  *product.Service
 }
 
 func NewServer() *Server {
@@ -40,6 +42,7 @@ func NewServer() *Server {
 		q:        q,
 		brand:    brand.New(q),
 		category: category.New(q),
+		product:  product.New(q),
 	}
 
 	// Declare Server config

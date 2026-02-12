@@ -6,7 +6,6 @@ import (
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
-	"go-with-tools/internal/helpers"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -35,8 +34,8 @@ func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.Bra
 		Id:        int(brand.ID),
 		Name:      brand.Name,
 		Slug:      brand.Slug,
-		CreatedAt: helpers.ParsePgTimestamptz(brand.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(brand.UpdatedAt),
+		CreatedAt: brand.CreatedAt,
+		UpdatedAt: brand.UpdatedAt,
 	}
 	return brandResponse, nil
 }
@@ -53,8 +52,8 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppErr
 			Id:        int(brand.ID),
 			Name:      brand.Name,
 			Slug:      brand.Slug,
-			CreatedAt: helpers.ParsePgTimestamptz(brand.CreatedAt),
-			UpdatedAt: helpers.ParsePgTimestamptz(brand.UpdatedAt),
+			CreatedAt: brand.CreatedAt,
+			UpdatedAt: brand.UpdatedAt,
 		}
 	}
 	return brandsResponse, nil
@@ -74,8 +73,8 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.BrandResponse, *errs.App
 		Id:        int(brand.ID),
 		Name:      brand.Name,
 		Slug:      brand.Slug,
-		CreatedAt: helpers.ParsePgTimestamptz(brand.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(brand.UpdatedAt),
+		CreatedAt: brand.CreatedAt,
+		UpdatedAt: brand.UpdatedAt,
 	}
 	return brandResponse, nil
 }
@@ -98,8 +97,8 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.BrandRequest) 
 		Id:        int(brand.ID),
 		Name:      brand.Name,
 		Slug:      brand.Slug,
-		CreatedAt: helpers.ParsePgTimestamptz(brand.CreatedAt),
-		UpdatedAt: helpers.ParsePgTimestamptz(brand.UpdatedAt),
+		CreatedAt: brand.CreatedAt,
+		UpdatedAt: brand.UpdatedAt,
 	}
 	return brandResponse, nil
 }

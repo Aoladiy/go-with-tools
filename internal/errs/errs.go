@@ -54,6 +54,8 @@ func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
 		msg = "slug already exists"
 	case "categories_slug_key":
 		msg = "slug already exists"
+	case "products_slug_key":
+		msg = "slug already exists"
 	default:
 		msg = "unique violation"
 	}
@@ -76,6 +78,10 @@ func ForeignKeyViolation(err error, pgErr *pgconn.PgError) *AppError {
 	switch pgErr.ConstraintName {
 	case "fk_categories_parent_id":
 		msg = "there is no category with such parent id"
+	case "fk_products_brand_id":
+		msg = "there is no brand with such id"
+	case "fk_products_category_id":
+		msg = "there is no category with such id"
 	default:
 		msg = "foreign key violation"
 	}

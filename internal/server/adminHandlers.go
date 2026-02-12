@@ -16,23 +16,73 @@ func (s *Server) LogoutHandler(c *gin.Context) {
 }
 
 func (s *Server) CreateProductHandler(c *gin.Context) {
-	// TODO
+	request, err := bindJson[DTO.ProductRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	product, err := s.product.Create(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, product)
 }
 
 func (s *Server) GetAllProductHandler(c *gin.Context) {
-	// TODO
+	products, err := s.product.GetAll(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, nonNilSlice(products))
 }
 
 func (s *Server) GetProductHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	product, err := s.product.Get(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, product)
 }
 
 func (s *Server) UpdateProductHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	request, err := bindJson[DTO.ProductRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	product, err := s.product.Update(c.Request.Context(), id, request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, product)
 }
 
 func (s *Server) DeleteProductHandler(c *gin.Context) {
-	// TODO
+	id, err := getIntPathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	_, err = s.product.Delete(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (s *Server) CreateBrandHandler(c *gin.Context) {

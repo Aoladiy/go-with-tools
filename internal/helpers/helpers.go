@@ -6,6 +6,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+func DerefString(pointer *string, defaultValue string) (result string) {
+	if pointer != nil {
+		return *pointer
+	}
+	return defaultValue
+}
+
+func DerefBool(pointer *bool, defaultValue bool) (result bool) {
+	if pointer != nil {
+		return *pointer
+	}
+	return defaultValue
+}
+
 func ParsePgTimestamptz(timestamptz pgtype.Timestamptz) (time *time.Time) {
 	if timestamptz.Valid {
 		time = &timestamptz.Time
