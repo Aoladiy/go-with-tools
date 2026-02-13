@@ -39,7 +39,7 @@ func (s *Server) GetAllProductHandler(c *gin.Context) {
 }
 
 func (s *Server) GetProductHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -53,7 +53,7 @@ func (s *Server) GetProductHandler(c *gin.Context) {
 }
 
 func (s *Server) UpdateProductHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -72,7 +72,7 @@ func (s *Server) UpdateProductHandler(c *gin.Context) {
 }
 
 func (s *Server) DeleteProductHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -109,7 +109,7 @@ func (s *Server) GetAllBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) GetBrandHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -123,7 +123,7 @@ func (s *Server) GetBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) UpdateBrandHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -142,7 +142,7 @@ func (s *Server) UpdateBrandHandler(c *gin.Context) {
 }
 
 func (s *Server) DeleteBrandHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -179,7 +179,7 @@ func (s *Server) GetAllCategoryHandler(c *gin.Context) {
 }
 
 func (s *Server) GetCategoryHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -193,7 +193,7 @@ func (s *Server) GetCategoryHandler(c *gin.Context) {
 }
 
 func (s *Server) UpdateCategoryHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return
@@ -212,7 +212,7 @@ func (s *Server) UpdateCategoryHandler(c *gin.Context) {
 }
 
 func (s *Server) DeleteCategoryHandler(c *gin.Context) {
-	id, err := getIntPathParam(c, "id")
+	id, err := getInt64PathParam(c, "id")
 	if err != nil {
 		respondError(c, err)
 		return

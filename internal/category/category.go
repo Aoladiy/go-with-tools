@@ -6,7 +6,6 @@ import (
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
-	"go-with-tools/internal/helpers"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -23,7 +22,7 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 	category, err := s.q.CreateCategory(ctx, queries.CreateCategoryParams{
 		Name:     request.Name,
 		Slug:     request.Slug,
-		ParentID: helpers.ToPgInt8(request.ParentId),
+		ParentID: request.ParentId,
 	})
 	if err != nil {
 		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
@@ -36,10 +35,10 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 	}
 
 	categoryResponse := DTO.CategoryResponse{
-		Id:        int(category.ID),
+		Id:        category.ID,
 		Name:      category.Name,
 		Slug:      category.Slug,
-		ParentId:  helpers.ParsePgInt8(category.ParentID),
+		ParentId:  category.ParentID,
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}
@@ -55,10 +54,10 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.App
 	categoriesResponse := make([]DTO.CategoryResponse, len(categories))
 	for i, category := range categories {
 		categoriesResponse[i] = DTO.CategoryResponse{
-			Id:        int(category.ID),
+			Id:        category.ID,
 			Name:      category.Name,
 			Slug:      category.Slug,
-			ParentId:  helpers.ParsePgInt8(category.ParentID),
+			ParentId:  category.ParentID,
 			CreatedAt: category.CreatedAt,
 			UpdatedAt: category.UpdatedAt,
 		}
@@ -66,8 +65,8 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.App
 	return categoriesResponse, nil
 }
 
-func (s *Service) Get(ctx context.Context, id int) (DTO.CategoryResponse, *errs.AppError) {
-	category, err := s.q.GetCategory(ctx, int64(id))
+func (s *Service) Get(ctx context.Context, id int64) (DTO.CategoryResponse, *errs.AppError) {
+	category, err := s.q.GetCategory(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.CategoryResponse{}, errs.NotFound(err)
@@ -77,22 +76,22 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.CategoryResponse, *errs.
 	}
 
 	categoryResponse := DTO.CategoryResponse{
-		Id:        int(category.ID),
+		Id:        category.ID,
 		Name:      category.Name,
 		Slug:      category.Slug,
-		ParentId:  helpers.ParsePgInt8(category.ParentID),
+		ParentId:  category.ParentID,
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}
 	return categoryResponse, nil
 }
 
-func (s *Service) Update(ctx context.Context, id int, request DTO.CategoryRequest) (DTO.CategoryResponse, *errs.AppError) {
+func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequest) (DTO.CategoryResponse, *errs.AppError) {
 	category, err := s.q.UpdateCategory(ctx, queries.UpdateCategoryParams{
-		ID:       int64(id),
+		ID:       id,
 		Name:     request.Name,
 		Slug:     request.Slug,
-		ParentID: helpers.ToPgInt8(request.ParentId),
+		ParentID: request.ParentId,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -108,18 +107,18 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.CategoryReques
 	}
 
 	categoryResponse := DTO.CategoryResponse{
-		Id:        int(category.ID),
+		Id:        category.ID,
 		Name:      category.Name,
 		Slug:      category.Slug,
-		ParentId:  helpers.ParsePgInt8(category.ParentID),
+		ParentId:  category.ParentID,
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}
 	return categoryResponse, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id int) (int, *errs.AppError) {
-	rows, err := s.q.DeleteCategory(ctx, int64(id))
+func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
+	rows, err := s.q.DeleteCategory(ctx, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}

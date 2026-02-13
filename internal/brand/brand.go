@@ -31,7 +31,7 @@ func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.Bra
 	}
 
 	brandResponse := DTO.BrandResponse{
-		Id:        int(brand.ID),
+		Id:        brand.ID,
 		Name:      brand.Name,
 		Slug:      brand.Slug,
 		CreatedAt: brand.CreatedAt,
@@ -49,7 +49,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppErr
 	brandsResponse := make([]DTO.BrandResponse, len(brands))
 	for i, brand := range brands {
 		brandsResponse[i] = DTO.BrandResponse{
-			Id:        int(brand.ID),
+			Id:        brand.ID,
 			Name:      brand.Name,
 			Slug:      brand.Slug,
 			CreatedAt: brand.CreatedAt,
@@ -59,8 +59,8 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppErr
 	return brandsResponse, nil
 }
 
-func (s *Service) Get(ctx context.Context, id int) (DTO.BrandResponse, *errs.AppError) {
-	brand, err := s.q.GetBrand(ctx, int64(id))
+func (s *Service) Get(ctx context.Context, id int64) (DTO.BrandResponse, *errs.AppError) {
+	brand, err := s.q.GetBrand(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.BrandResponse{}, errs.NotFound(err)
@@ -70,7 +70,7 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.BrandResponse, *errs.App
 	}
 
 	brandResponse := DTO.BrandResponse{
-		Id:        int(brand.ID),
+		Id:        brand.ID,
 		Name:      brand.Name,
 		Slug:      brand.Slug,
 		CreatedAt: brand.CreatedAt,
@@ -79,9 +79,9 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.BrandResponse, *errs.App
 	return brandResponse, nil
 }
 
-func (s *Service) Update(ctx context.Context, id int, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
+func (s *Service) Update(ctx context.Context, id int64, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
 	brand, err := s.q.UpdateBrand(ctx, queries.UpdateBrandParams{
-		ID:   int64(id),
+		ID:   id,
 		Name: request.Name,
 		Slug: request.Slug,
 	})
@@ -94,7 +94,7 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.BrandRequest) 
 	}
 
 	brandResponse := DTO.BrandResponse{
-		Id:        int(brand.ID),
+		Id:        brand.ID,
 		Name:      brand.Name,
 		Slug:      brand.Slug,
 		CreatedAt: brand.CreatedAt,
@@ -103,8 +103,8 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.BrandRequest) 
 	return brandResponse, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id int) (int, *errs.AppError) {
-	rows, err := s.q.DeleteBrand(ctx, int64(id))
+func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
+	rows, err := s.q.DeleteBrand(ctx, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}

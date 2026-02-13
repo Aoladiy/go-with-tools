@@ -27,8 +27,8 @@ func getStringPathParam(c *gin.Context, param string) string {
 	return c.Param(param)
 }
 
-func getIntPathParam(c *gin.Context, param string) (int, *errs.AppError) {
-	pathParam, err := strconv.Atoi(c.Param(param))
+func getInt64PathParam(c *gin.Context, param string) (int64, *errs.AppError) {
+	pathParam, err := strconv.ParseInt(c.Param(param), 10, 64)
 	if err != nil {
 		return 0, errs.BadRequest(err)
 	}

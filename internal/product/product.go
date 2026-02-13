@@ -21,12 +21,12 @@ func New(q queries.Querier) *Service {
 
 func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
 	product, err := s.q.CreateProduct(ctx, queries.CreateProductParams{
-		BrandID:     int64(request.BrandId),
-		CategoryID:  int64(request.CategoryId),
+		BrandID:     request.BrandId,
+		CategoryID:  request.CategoryId,
 		Name:        request.Name,
 		Slug:        request.Slug,
 		Description: helpers.DerefString(request.Description, ""),
-		PriceKopeck: int32(request.PriceKopeck),
+		PriceKopeck: request.PriceKopeck,
 		IsActive:    helpers.DerefBool(request.IsActive, true),
 	})
 	if err != nil {
@@ -40,13 +40,13 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 	}
 
 	productResponse := DTO.ProductResponse{
-		Id:          int(product.ID),
-		BrandId:     int(product.BrandID),
-		CategoryId:  int(product.CategoryID),
+		Id:          product.ID,
+		BrandId:     product.BrandID,
+		CategoryId:  product.CategoryID,
 		Name:        product.Name,
 		Slug:        product.Slug,
 		Description: product.Description,
-		PriceKopeck: int(product.PriceKopeck),
+		PriceKopeck: product.PriceKopeck,
 		IsActive:    product.IsActive,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
@@ -63,13 +63,13 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.ProductResponse, *errs.AppE
 	productsResponse := make([]DTO.ProductResponse, len(products))
 	for i, product := range products {
 		productsResponse[i] = DTO.ProductResponse{
-			Id:          int(product.ID),
-			BrandId:     int(product.BrandID),
-			CategoryId:  int(product.CategoryID),
+			Id:          product.ID,
+			BrandId:     product.BrandID,
+			CategoryId:  product.CategoryID,
 			Name:        product.Name,
 			Slug:        product.Slug,
 			Description: product.Description,
-			PriceKopeck: int(product.PriceKopeck),
+			PriceKopeck: product.PriceKopeck,
 			IsActive:    product.IsActive,
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
@@ -78,8 +78,8 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.ProductResponse, *errs.AppE
 	return productsResponse, nil
 }
 
-func (s *Service) Get(ctx context.Context, id int) (DTO.ProductResponse, *errs.AppError) {
-	product, err := s.q.GetProduct(ctx, int64(id))
+func (s *Service) Get(ctx context.Context, id int64) (DTO.ProductResponse, *errs.AppError) {
+	product, err := s.q.GetProduct(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.ProductResponse{}, errs.NotFound(err)
@@ -89,13 +89,13 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.ProductResponse, *errs.A
 	}
 
 	productResponse := DTO.ProductResponse{
-		Id:          int(product.ID),
-		BrandId:     int(product.BrandID),
-		CategoryId:  int(product.CategoryID),
+		Id:          product.ID,
+		BrandId:     product.BrandID,
+		CategoryId:  product.CategoryID,
 		Name:        product.Name,
 		Slug:        product.Slug,
 		Description: product.Description,
-		PriceKopeck: int(product.PriceKopeck),
+		PriceKopeck: product.PriceKopeck,
 		IsActive:    product.IsActive,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
@@ -103,15 +103,15 @@ func (s *Service) Get(ctx context.Context, id int) (DTO.ProductResponse, *errs.A
 	return productResponse, nil
 }
 
-func (s *Service) Update(ctx context.Context, id int, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
+func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
 	product, err := s.q.UpdateProduct(ctx, queries.UpdateProductParams{
-		ID:          int64(id),
-		BrandID:     int64(request.BrandId),
-		CategoryID:  int64(request.CategoryId),
+		ID:          id,
+		BrandID:     request.BrandId,
+		CategoryID:  request.CategoryId,
 		Name:        request.Name,
 		Slug:        request.Slug,
 		Description: helpers.DerefString(request.Description, ""),
-		PriceKopeck: int32(request.PriceKopeck),
+		PriceKopeck: request.PriceKopeck,
 		IsActive:    helpers.DerefBool(request.IsActive, true),
 	})
 	if err != nil {
@@ -129,13 +129,13 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.ProductRequest
 	}
 
 	productResponse := DTO.ProductResponse{
-		Id:          int(product.ID),
-		BrandId:     int(product.BrandID),
-		CategoryId:  int(product.CategoryID),
+		Id:          product.ID,
+		BrandId:     product.BrandID,
+		CategoryId:  product.CategoryID,
 		Name:        product.Name,
 		Slug:        product.Slug,
 		Description: product.Description,
-		PriceKopeck: int(product.PriceKopeck),
+		PriceKopeck: product.PriceKopeck,
 		IsActive:    product.IsActive,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
@@ -143,8 +143,8 @@ func (s *Service) Update(ctx context.Context, id int, request DTO.ProductRequest
 	return productResponse, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id int) (int, *errs.AppError) {
-	rows, err := s.q.DeleteProduct(ctx, int64(id))
+func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
+	rows, err := s.q.DeleteProduct(ctx, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}
