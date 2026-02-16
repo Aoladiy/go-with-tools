@@ -85,6 +85,20 @@ func (s *Server) DeleteProductHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (s *Server) GetProductPriceHistory(c *gin.Context) {
+	id, err := getInt64PathParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	priceHistory, err := s.product.GetPriceHistory(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, nonNilSlice(priceHistory))
+}
+
 func (s *Server) CreateBrandHandler(c *gin.Context) {
 	request, err := bindJson[DTO.BrandRequest](c)
 	if err != nil {

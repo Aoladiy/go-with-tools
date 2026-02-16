@@ -36,6 +36,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	products.GET("/:id", s.GetProductHandler)
 	products.PUT("/:id", s.UpdateProductHandler)
 	products.DELETE("/:id", s.DeleteProductHandler)
+	products.GET("/:id/priceHistory", s.GetProductPriceHistory)
 
 	brands := admin.Group("/brands")
 	brands.POST("", s.CreateBrandHandler)

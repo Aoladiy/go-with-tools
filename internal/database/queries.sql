@@ -1,19 +1,33 @@
 -- name: GetAllBrands :many
-select id, name, slug, created_at, updated_at
+select id,
+       name,
+       slug,
+       created_at,
+       updated_at
 from brands
 where deleted_at is null;
 
 -- name: GetBrand :one
-select id, name, slug, created_at, updated_at
+select id,
+       name,
+       slug,
+       created_at,
+       updated_at
 from brands
 where id = $1
   and deleted_at is null
 limit 1;
 
 -- name: CreateBrand :one
-insert into brands (name, slug)
-VALUES ($1, $2)
-returning id, name, slug, created_at, updated_at;
+insert into brands (name,
+                    slug)
+VALUES ($1,
+        $2)
+returning id,
+    name,
+    slug,
+    created_at,
+    updated_at;
 
 -- name: UpdateBrand :one
 update brands
@@ -22,7 +36,11 @@ SET name       = $2,
     updated_at = now()
 where id = $1
   and deleted_at is null
-returning id, name, slug, created_at, updated_at;
+returning id,
+    name,
+    slug,
+    created_at,
+    updated_at;
 
 -- name: DeleteBrand :execrows
 update brands
@@ -32,21 +50,40 @@ where id = $1
   and deleted_at is null;
 
 -- name: GetAllCategories :many
-select id, name, slug, parent_id, created_at, updated_at
+select id,
+       name,
+       slug,
+       parent_id,
+       created_at,
+       updated_at
 from categories
 where deleted_at is null;
 
 -- name: GetCategory :one
-select id, name, slug, parent_id, created_at, updated_at
+select id,
+       name,
+       slug,
+       parent_id,
+       created_at,
+       updated_at
 from categories
 where id = $1
   and deleted_at is null
 limit 1;
 
 -- name: CreateCategory :one
-insert into categories (name, slug, parent_id)
-VALUES ($1, $2, $3)
-returning id, name, slug, parent_id, created_at, updated_at;
+insert into categories (name,
+                        slug,
+                        parent_id)
+VALUES ($1,
+        $2,
+        $3)
+returning id,
+    name,
+    slug,
+    parent_id,
+    created_at,
+    updated_at;
 
 -- name: UpdateCategory :one
 update categories
@@ -56,7 +93,12 @@ SET name       = $2,
     updated_at = now()
 where id = $1
   and deleted_at is null
-returning id, name, slug, parent_id, created_at, updated_at;
+returning id,
+    name,
+    slug,
+    parent_id,
+    created_at,
+    updated_at;
 
 -- name: DeleteCategory :execrows
 update categories
@@ -96,9 +138,30 @@ where id = $1
 limit 1;
 
 -- name: CreateProduct :one
-insert into products (brand_id, category_id, name, slug, description, price_kopeck, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-returning id, brand_id, category_id, name, slug, description, price_kopeck, is_active, created_at, updated_at;
+insert into products (brand_id,
+                      category_id,
+                      name,
+                      slug,
+                      description,
+                      price_kopeck,
+                      is_active)
+VALUES ($1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7)
+returning id,
+    brand_id,
+    category_id,
+    name,
+    slug,
+    description,
+    price_kopeck,
+    is_active,
+    created_at,
+    updated_at;
 
 -- name: UpdateProduct :one
 update products
@@ -112,7 +175,16 @@ SET brand_id     = $2,
     updated_at   = now()
 where id = $1
   and deleted_at is null
-returning id, brand_id, category_id, name, slug, description, price_kopeck, is_active, created_at, updated_at;
+returning id,
+    brand_id,
+    category_id,
+    name,
+    slug,
+    description,
+    price_kopeck,
+    is_active,
+    created_at,
+    updated_at;
 
 -- name: DeleteProduct :execrows
 update products
@@ -120,3 +192,26 @@ set deleted_at = now(),
     updated_at = now()
 where id = $1
   and deleted_at is null;
+
+-- name: CreateProductPriceHistory :one
+insert into product_price_history (product_id,
+                                   old_price_kopeck,
+                                   new_price_kopeck,
+                                   updated_by)
+VALUES ($1,
+        $2,
+        $3,
+        $4)
+returning *;
+
+-- name: GetProductPriceHistoryByProductId :many
+select product_price_history.id,
+       product_price_history.product_id,
+       product_price_history.old_price_kopeck,
+       product_price_history.new_price_kopeck,
+       product_price_history.created_at,
+       product_price_history.updated_by
+from product_price_history
+         join products on product_price_history.product_id = products.id
+where product_price_history.product_id = $1
+  and products.deleted_at is null;

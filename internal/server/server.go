@@ -35,14 +35,15 @@ func NewServer() *Server {
 	}
 	port, _ := strconv.Atoi(portEnv)
 	db := database.New()
+	pool := db.GetPool()
 	q := queries.New(db.GetPool())
 	newServer := &Server{
 		port:     port,
 		db:       db,
 		q:        q,
-		brand:    brand.New(q),
-		category: category.New(q),
-		product:  product.New(q),
+		brand:    brand.New(q, pool),
+		category: category.New(q, pool),
+		product:  product.New(q, pool),
 	}
 
 	// Declare Server config

@@ -28,12 +28,12 @@ type service struct {
 }
 
 var (
-	database, databaseExists = os.LookupEnv("BLUEPRINT_DB_DATABASE")
-	password, passwordExists = os.LookupEnv("BLUEPRINT_DB_PASSWORD")
-	username, usernameExists = os.LookupEnv("BLUEPRINT_DB_USERNAME")
-	port, portExists         = os.LookupEnv("BLUEPRINT_DB_PORT")
-	host, hostExists         = os.LookupEnv("BLUEPRINT_DB_HOST")
-	schema, schemaExists     = os.LookupEnv("BLUEPRINT_DB_SCHEMA")
+	database, databaseExists = os.LookupEnv("DB_DATABASE")
+	password, passwordExists = os.LookupEnv("DB_PASSWORD")
+	username, usernameExists = os.LookupEnv("DB_USERNAME")
+	port, portExists         = os.LookupEnv("DB_PORT")
+	host, hostExists         = os.LookupEnv("DB_HOST")
+	schema, schemaExists     = os.LookupEnv("DB_SCHEMA")
 	dbInstance               *service
 )
 

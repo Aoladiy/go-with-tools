@@ -8,14 +8,16 @@ import (
 	"go-with-tools/internal/errs"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Service struct {
-	q queries.Querier
+	q *queries.Queries
+	p *pgxpool.Pool
 }
 
-func New(q queries.Querier) *Service {
-	return &Service{q: q}
+func New(q *queries.Queries, p *pgxpool.Pool) *Service {
+	return &Service{q: q, p: p}
 }
 
 func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
