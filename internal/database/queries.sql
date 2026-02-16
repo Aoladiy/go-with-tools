@@ -107,6 +107,12 @@ set deleted_at = now(),
 where id = $1
   and deleted_at is null;
 
+-- name: GetCategoriesByParentId :many
+select id
+from categories
+where parent_id = $1
+  and deleted_at is null;
+
 -- name: GetAllProducts :many
 select id,
        brand_id,
@@ -191,6 +197,20 @@ update products
 set deleted_at = now(),
     updated_at = now()
 where id = $1
+  and deleted_at is null;
+
+-- name: DeleteProductsByBrandId :execrows
+update products
+set deleted_at = now(),
+    updated_at = now()
+where brand_id = $1
+  and deleted_at is null;
+
+-- name: DeleteProductsByCategoryId :execrows
+update products
+set deleted_at = now(),
+    updated_at = now()
+where category_id = $1
   and deleted_at is null;
 
 -- name: CreateProductPriceHistory :one

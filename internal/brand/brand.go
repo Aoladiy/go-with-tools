@@ -6,6 +6,7 @@ import (
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -106,12 +107,30 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.BrandRequest
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
-	rows, err := s.q.DeleteBrand(ctx, id)
+	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	tx, err := s.p.Begin(timeout)
+	if err != nil {
+		return 0, errs.Internal(err)
+	}
+
+	defer tx.Rollback(timeout)
+	rows, err := s.q.WithTx(tx).DeleteBrand(timeout, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}
 	if rows == 0 {
 		return int(rows), errs.NotFound(errors.New("brand not found"))
+	}
+
+	_, err = s.q.WithTx(tx).DeleteProductsByBrandId(timeout, id)
+	if err != nil {
+		return 0, errs.Internal(err)
+	}
+
+	err = tx.Commit(timeout)
+	if err != nil {
+		return 0, errs.Internal(err)
 	}
 	return int(rows), nil
 }

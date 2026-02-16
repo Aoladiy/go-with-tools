@@ -3,6 +3,7 @@ package product
 import (
 	"context"
 	"errors"
+	"fmt"
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
@@ -23,6 +24,15 @@ func New(q *queries.Queries, p *pgxpool.Pool) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
+	_, err := s.q.GetBrand(ctx, request.BrandId)
+	if err != nil {
+		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("brand with id=%d not found | %w", request.BrandId, err))
+	}
+	_, err = s.q.GetCategory(ctx, request.CategoryId)
+	if err != nil {
+		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("category with id=%d not found | %w", request.CategoryId, err))
+	}
+
 	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	tx, err := s.p.Begin(timeout)
@@ -30,7 +40,7 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 	defer tx.Rollback(timeout)
-	product, err := s.q.WithTx(tx).CreateProduct(timeout, queries.CreateProductParams{
+	product, err := s.q.WithTx(tx).CreateProduct(timeout, queries.CreateProductParams{ //TODO handle case with non empty brand's and\or category's deleted_at
 		BrandID:     request.BrandId,
 		CategoryID:  request.CategoryId,
 		Name:        request.Name,
@@ -123,6 +133,15 @@ func (s *Service) Get(ctx context.Context, id int64) (DTO.ProductResponse, *errs
 }
 
 func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
+	_, err := s.q.GetBrand(ctx, request.BrandId)
+	if err != nil {
+		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("brand with id=%d not found | %w", request.BrandId, err))
+	}
+	_, err = s.q.GetCategory(ctx, request.CategoryId)
+	if err != nil {
+		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("category with id=%d not found | %w", request.CategoryId, err))
+	}
+
 	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	tx, err := s.p.Begin(timeout)
@@ -140,7 +159,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 
-	product, err := s.q.WithTx(tx).UpdateProduct(timeout, queries.UpdateProductParams{
+	product, err := s.q.WithTx(tx).UpdateProduct(timeout, queries.UpdateProductParams{ //TODO handle case with non empty brand's and\or category's deleted_at
 		ID:          id,
 		BrandID:     request.BrandId,
 		CategoryID:  request.CategoryId,
