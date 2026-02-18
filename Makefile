@@ -72,4 +72,7 @@ db-schema:
 sqlc: db-schema
 	sqlc generate
 
-.PHONY: all build run test clean watch docker-run docker-down itest db-schema sqlc
+swag:
+	cd cmd/api/ && swag init
+
+.PHONY: all build run test clean watch docker-run docker-down itest db-schema sqlc swag

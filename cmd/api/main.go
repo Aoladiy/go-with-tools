@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	_ "go-with-tools/docs"
 	"go-with-tools/internal/server"
 	"log"
 	"net/http"
@@ -38,6 +39,17 @@ func gracefulShutdown(apiServer *server.Server, done chan bool) {
 	done <- true
 }
 
+//	@title			My API
+//	@version		1.0
+//	@description	A brief description of my API.
+
+//	@host		localhost:8080
+//	@BasePath	/api/v1
+
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description				Type "Bearer" followed by a space and the JWT token.
 func main() {
 
 	newServer := server.NewServer()

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/errs"
 	"strconv"
 
@@ -37,5 +38,8 @@ func getInt64PathParam(c *gin.Context, param string) (int64, *errs.AppError) {
 
 func respondError(c *gin.Context, err *errs.AppError) {
 	_ = c.Error(err)
-	c.JSON(err.Code, gin.H{"error": err.Error()})
+	c.JSON(
+		err.Code,
+		DTO.ErrorResponse{Error: err.Error()},
+	)
 }

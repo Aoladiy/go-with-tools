@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -18,7 +20,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowCredentials: true, // Enable cookies/auth
 	}))
 	r.Use(LogErrors())
+
 	apiV1 := r.Group("/api/v1")
+	apiV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))
 	apiV1.GET("/health", s.healthHandler)
 	apiV1.GET("/hello", s.HelloWorldHandler)
 	apiV1.GET("/categories", s.CategoriesHandler)
