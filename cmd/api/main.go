@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	_ "go-with-tools/docs"
+	_ "go-with-tools/cmd/api/docs"
 	"go-with-tools/internal/server"
 	"log"
 	"net/http"

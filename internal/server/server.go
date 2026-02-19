@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"go-with-tools/internal/auth"
 	"go-with-tools/internal/brand"
 	"go-with-tools/internal/category"
 	"go-with-tools/internal/database/queries"
@@ -26,6 +27,7 @@ type Server struct {
 	brand    *brand.Service
 	category *category.Service
 	product  *product.Service
+	auth     *auth.Service
 }
 
 func NewServer() *Server {
@@ -44,6 +46,7 @@ func NewServer() *Server {
 		brand:    brand.New(q, pool),
 		category: category.New(q, pool),
 		product:  product.New(q, pool),
+		auth:     auth.New(q, pool),
 	}
 
 	// Declare Server config

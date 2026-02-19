@@ -235,3 +235,8 @@ from product_price_history
          join products on product_price_history.product_id = products.id
 where product_price_history.product_id = $1
   and products.deleted_at is null;
+
+-- name: CreateAdminUser :one
+insert into admin_users (email, password_hash)
+VALUES ($1, $2)
+returning id, email, created_at, updated_at;

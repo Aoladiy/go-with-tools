@@ -20,3 +20,8 @@ type ProductRequest struct {
 	PriceKopeck int32   `json:"price_kopeck"`
 	IsActive    *bool   `json:"is_active,omitempty"`
 }
+
+type SignUpRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

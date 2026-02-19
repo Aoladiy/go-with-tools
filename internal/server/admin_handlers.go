@@ -7,11 +7,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) LoginHandler(c *gin.Context) {
+// SignUpHandler registers a new admin user and returns JWT tokens
+//
+//	@Summary		Admin sign up
+//	@Description	Register a new admin user and receive access and refresh JWT tokens
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		DTO.SignUpRequest	true	"Sign up credentials"
+//	@Success		200		{object}	DTO.JWTResponse
+//	@Failure		400		{object}	DTO.ErrorResponse	"invalid input or password too short"
+//	@Failure		409		{object}	DTO.ErrorResponse	"email already exists"
+//	@Failure		500		{object}	DTO.ErrorResponse
+//	@Router			/admin/sign-up [post]
+func (s *Server) SignUpHandler(c *gin.Context) {
+	request, err := bindJson[DTO.SignUpRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	jwtResponse, err := s.auth.SignUp(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, jwtResponse)
+}
+
+func (s *Server) SignInHandler(c *gin.Context) {
 	// TODO
 }
 
-func (s *Server) LogoutHandler(c *gin.Context) {
+func (s *Server) TokenRefreshHandler(c *gin.Context) {
+	// TODO
+}
+
+func (s *Server) SignOutHandler(c *gin.Context) {
 	// TODO
 }
 

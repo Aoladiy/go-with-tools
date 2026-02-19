@@ -73,6 +73,6 @@ sqlc: db-schema
 	sqlc generate
 
 swag:
-	cd cmd/api/ && swag init
+	swag init -g main.go -d cmd/api,internal/ -o cmd/api/docs
 
 .PHONY: all build run test clean watch docker-run docker-down itest db-schema sqlc swag
