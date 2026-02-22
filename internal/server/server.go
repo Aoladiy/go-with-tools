@@ -42,7 +42,7 @@ func NewServer(c config.Config) *Server {
 		auth:     auth.New(q, pool, c),
 	}
 
-	// Declare Server c
+	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", newServer.c.AppHost, newServer.c.AppPort),
 		Handler:      newServer.RegisterRoutes(),

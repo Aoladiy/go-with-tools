@@ -24,7 +24,7 @@ func AuthByJWT(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 		if strings.ToLower(bearerAndToken[0]) != "bearer" {
-			respondError(c, errs.Unauthorized(errors.New(fmt.Sprintf("wrong token format (first word was not \"Bearer\". It was \"%s\")", bearerAndToken[0]))))
+			respondError(c, errs.Unauthorized(errors.New("invalid authorization header format")))
 			c.Abort()
 			return
 		}
@@ -37,11 +37,6 @@ func AuthByJWT(jwtSecret string) gin.HandlerFunc {
 		})
 		if err != nil {
 			respondError(c, errs.Unauthorized(err))
-			c.Abort()
-			return
-		}
-		if !parsedToken.Valid {
-			respondError(c, errs.Unauthorized(errors.New("token is invalid")))
 			c.Abort()
 			return
 		}
