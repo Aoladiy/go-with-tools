@@ -34,12 +34,57 @@ func (s *Server) SignUpHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, jwtResponse)
 }
 
+// SignInHandler logins a new admin user and returns JWT tokens
+//
+//	@Summary		Admin login
+//	@Description	login a new admin user and receive access and refresh JWT tokens
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		DTO.SignInRequest	true	"login credentials"
+//	@Success		200		{object}	DTO.JWTResponse
+//	@Failure		400		{object}	DTO.ErrorResponse	"invalid input or password too short"
+//	@Failure		401		{object}	DTO.ErrorResponse	"wrong credentials"
+//	@Failure		500		{object}	DTO.ErrorResponse
+//	@Router			/admin/sign-in [post]
 func (s *Server) SignInHandler(c *gin.Context) {
-	// TODO
+	request, err := bindJson[DTO.SignInRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	jwtResponse, err := s.auth.SignIn(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, jwtResponse)
 }
 
+// TokenRefreshHandler returns new access and refresh tokens
+//
+//	@Summary		Token refresh
+//	@Description	Returns new access and refresh tokens
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		DTO.TokenRefreshRequest	true	"JWT access token"
+//	@Success		200		{object}	DTO.JWTResponse
+//	@Failure		400		{object}	DTO.ErrorResponse	"invalid input"
+//	@Failure		500		{object}	DTO.ErrorResponse
+//	@Router			/admin/token-refresh [post]
 func (s *Server) TokenRefreshHandler(c *gin.Context) {
-	// TODO
+	request, err := bindJson[DTO.TokenRefreshRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	jwtResponse, err := s.auth.TokenRefresh(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, jwtResponse)
 }
 
 func (s *Server) SignOutHandler(c *gin.Context) {

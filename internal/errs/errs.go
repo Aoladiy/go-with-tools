@@ -45,6 +45,14 @@ func BadRequest(err error) *AppError {
 	}
 }
 
+func Unauthorized(err error) *AppError {
+	return &AppError{
+		Message: "unauthorized",
+		Code:    http.StatusUnauthorized,
+		Err:     err,
+	}
+}
+
 func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
 	var msg string
 	switch pgErr.ConstraintName {
@@ -56,6 +64,8 @@ func UniqueViolation(err error, pgErr *pgconn.PgError) *AppError {
 		msg = "slug already exists"
 	case "products_slug_key":
 		msg = "slug already exists"
+	case "admin_users_email_key":
+		msg = "email already exists"
 	default:
 		msg = "unique violation"
 	}

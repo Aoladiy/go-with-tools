@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"go-with-tools/internal/errs"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -21,17 +20,22 @@ func LogErrors() gin.HandlerFunc {
 		if len(c.Errors) == 0 {
 			return
 		}
-		for _, e := range c.Errors {
-			var appErr *errs.AppError
-			if errors.As(e.Err, &appErr) {
-				if cause := appErr.Unwrap(); cause != nil {
-					log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%s\" | caused by \"%v\"", c.Request.Method, c.FullPath(), appErr.Code, appErr, cause)
-				} else {
-					log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%s\"", c.Request.Method, c.FullPath(), appErr.Code, appErr)
-				}
-			} else {
-				log.Printf("method \"%s\" | route \"%s\" | HTTP code \"%d\" | error \"%v\"", c.Request.Method, c.FullPath(), c.Writer.Status(), e.Error())
-			}
+
+		log.Printf("\n[ERRORS %d] %s %s", len(c.Errors), c.Request.Method, c.FullPath())
+
+		for i, e := range c.Errors {
+			log.Printf("  Error %d:", i+1)
+			logErrorRecursive(e.Err, "    ")
 		}
+		log.Printf("")
 	}
+}
+
+func logErrorRecursive(err error, indent string) {
+	if err == nil {
+		return
+	}
+
+	log.Printf("%s -> %s", indent, err.Error())
+	logErrorRecursive(errors.Unwrap(err), indent+"  ")
 }

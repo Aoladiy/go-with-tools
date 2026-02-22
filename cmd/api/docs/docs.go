@@ -910,6 +910,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/sign-in": {
+            "post": {
+                "description": "login a new admin user and receive access and refresh JWT tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Admin login",
+                "parameters": [
+                    {
+                        "description": "login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DTO.SignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.JWTResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input or password too short",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "wrong credentials",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/sign-up": {
             "post": {
                 "description": "Register a new admin user and receive access and refresh JWT tokens",
@@ -949,6 +1001,52 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/token-refresh": {
+            "post": {
+                "description": "Returns new access and refresh tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Token refresh",
+                "parameters": [
+                    {
+                        "description": "JWT access token",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DTO.TokenRefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DTO.JWTResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
                         "schema": {
                             "$ref": "#/definitions/DTO.ErrorResponse"
                         }
@@ -1112,6 +1210,17 @@ const docTemplate = `{
                 }
             }
         },
+        "DTO.SignInRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "DTO.SignUpRequest": {
             "type": "object",
             "properties": {
@@ -1119,6 +1228,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "DTO.TokenRefreshRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
                     "type": "string"
                 }
             }

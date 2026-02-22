@@ -96,11 +96,23 @@ definitions:
       updated_at:
         type: string
     type: object
+  DTO.SignInRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
   DTO.SignUpRequest:
     properties:
       email:
         type: string
       password:
+        type: string
+    type: object
+  DTO.TokenRefreshRequest:
+    properties:
+      refresh_token:
         type: string
     type: object
   queries.ProductPriceHistory:
@@ -702,6 +714,40 @@ paths:
       summary: Product price history
       tags:
       - products
+  /admin/sign-in:
+    post:
+      consumes:
+      - application/json
+      description: login a new admin user and receive access and refresh JWT tokens
+      parameters:
+      - description: login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/DTO.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DTO.JWTResponse'
+        "400":
+          description: invalid input or password too short
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+        "401":
+          description: wrong credentials
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+      summary: Admin login
+      tags:
+      - auth
   /admin/sign-up:
     post:
       consumes:
@@ -734,6 +780,36 @@ paths:
           schema:
             $ref: '#/definitions/DTO.ErrorResponse'
       summary: Admin sign up
+      tags:
+      - auth
+  /admin/token-refresh:
+    post:
+      consumes:
+      - application/json
+      description: Returns new access and refresh tokens
+      parameters:
+      - description: JWT access token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/DTO.TokenRefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DTO.JWTResponse'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+      summary: Token refresh
       tags:
       - auth
 securityDefinitions:
