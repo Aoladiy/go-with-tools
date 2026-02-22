@@ -2,10 +2,9 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"go-with-tools/internal/config"
 	"log"
-	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,27 +24,17 @@ type Service interface {
 
 type service struct {
 	db *pgxpool.Pool
+	c  config.Config
 }
 
-var (
-	database, databaseExists = os.LookupEnv("DB_DATABASE")
-	password, passwordExists = os.LookupEnv("DB_PASSWORD")
-	username, usernameExists = os.LookupEnv("DB_USERNAME")
-	port, portExists         = os.LookupEnv("DB_PORT")
-	host, hostExists         = os.LookupEnv("DB_HOST")
-	schema, schemaExists     = os.LookupEnv("DB_SCHEMA")
-	dbInstance               *service
-)
+var dbInstance *service
 
-func New() Service {
-	if !databaseExists || !passwordExists || !usernameExists || !portExists || !hostExists || !schemaExists {
-		log.Fatalln(errors.New("some database variables are not set in .env file"))
-	}
+func New(c config.Config) Service {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", c.DbUsername, c.DbPassword, c.DbHost, c.DbPort, c.DbDatabaseName, c.DbSchema)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
 	defer cancel()
 	pool, err := pgxpool.New(ctx, connStr)
@@ -54,6 +43,7 @@ func New() Service {
 	}
 	dbInstance = &service{
 		db: pool,
+		c:  c,
 	}
 	return dbInstance
 }
@@ -84,7 +74,7 @@ func (s *service) Health() map[string]string {
 
 func (s *service) Close() {
 	s.db.Close()
-	log.Printf("Disconnected from database: %s", database)
+	log.Printf("Disconnected from database: %s", s.c.DbDatabaseName)
 }
 
 func (s *service) GetPool() *pgxpool.Pool {

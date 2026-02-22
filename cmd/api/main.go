@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "go-with-tools/cmd/api/docs"
+	"go-with-tools/internal/config"
 	"go-with-tools/internal/server"
 	"log"
 	"net/http"
@@ -51,8 +52,12 @@ func gracefulShutdown(apiServer *server.Server, done chan bool) {
 // @name						Authorization
 // @description				Type "Bearer" followed by a space and the JWT token.
 func main() {
-
-	newServer := server.NewServer()
+	c := config.Config{}
+	err := c.LoadEnv()
+	if err != nil {
+		log.Fatalln("cannot load env variables", err)
+	}
+	newServer := server.NewServer(c)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
@@ -60,7 +65,7 @@ func main() {
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(newServer, done)
 
-	err := newServer.Server.ListenAndServe()
+	err = newServer.Server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Sprintf("http newServer error: %s", err))
 	}

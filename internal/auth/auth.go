@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"go-with-tools/internal/DTO"
+	"go-with-tools/internal/config"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
-	"os"
 	"strconv"
 	"time"
 
@@ -22,10 +22,11 @@ const UserId = "user_id"
 type Service struct {
 	q *queries.Queries
 	p *pgxpool.Pool
+	c config.Config
 }
 
-func New(q *queries.Queries, p *pgxpool.Pool) *Service {
-	return &Service{q: q, p: p}
+func New(q *queries.Queries, p *pgxpool.Pool, c config.Config) *Service {
+	return &Service{q: q, p: p, c: c}
 }
 
 func (s *Service) SignUp(ctx context.Context, request DTO.SignUpRequest) (DTO.JWTResponse, *errs.AppError) {
@@ -54,10 +55,7 @@ func (s *Service) SignUp(ctx context.Context, request DTO.SignUpRequest) (DTO.JW
 		}
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
-	secret, isset := os.LookupEnv("JWT_SECRET") //TODO refactor to fill all env variables once on app startup
-	if !isset {
-		return DTO.JWTResponse{}, errs.Internal(errors.New("cannot generate jwt token"))
-	}
+	secret := s.c.JwtSecret
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
 		Subject:   strconv.FormatInt(adminUser.ID, 10),
@@ -102,10 +100,7 @@ func (s *Service) SignIn(ctx context.Context, request DTO.SignInRequest) (DTO.JW
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Unauthorized(fmt.Errorf("wrong password %w", err))
 	}
-	secret, isset := os.LookupEnv("JWT_SECRET") //TODO refactor to fill all env variables once on app startup
-	if !isset {
-		return DTO.JWTResponse{}, errs.Internal(errors.New("cannot generate jwt token"))
-	}
+	secret := s.c.JwtSecret
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
 		Subject:   strconv.FormatInt(adminUser.ID, 10),
@@ -133,10 +128,7 @@ func (s *Service) SignIn(ctx context.Context, request DTO.SignInRequest) (DTO.JW
 }
 
 func (s *Service) TokenRefresh(ctx context.Context, request DTO.TokenRefreshRequest) (DTO.JWTResponse, *errs.AppError) {
-	secret, isset := os.LookupEnv("JWT_SECRET") //TODO refactor to fill all env variables once on app startup
-	if !isset {
-		return DTO.JWTResponse{}, errs.Internal(errors.New("cannot generate jwt token"))
-	}
+	secret := s.c.JwtSecret
 	withClaims, err := jwt.ParseWithClaims(request.RefreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 		if token.Method == jwt.SigningMethodHS256 {
 			return []byte(secret), nil

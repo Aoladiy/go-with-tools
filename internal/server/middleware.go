@@ -7,7 +7,6 @@ import (
 	"go-with-tools/internal/auth"
 	"go-with-tools/internal/errs"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
@@ -15,14 +14,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func AuthByJWT() gin.HandlerFunc {
+func AuthByJWT(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		secret, isset := os.LookupEnv("JWT_SECRET") //TODO refactor to fill all env variables once on app startup
-		if !isset {
-			respondError(c, errs.Internal(errors.New("cannot read secret for jwt token")))
-			c.Abort()
-			return
-		}
 		authorization := c.GetHeader("Authorization")
 		bearerAndToken := strings.Split(authorization, " ")
 		if len(bearerAndToken) < 2 {
@@ -38,7 +31,7 @@ func AuthByJWT() gin.HandlerFunc {
 		token := bearerAndToken[1]
 		parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 			if token.Method == jwt.SigningMethodHS256 {
-				return []byte(secret), nil
+				return []byte(jwtSecret), nil
 			}
 			return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
 		})
