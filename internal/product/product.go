@@ -230,11 +230,15 @@ func (s *Service) GetPriceHistory(ctx context.Context, id int64) ([]queries.Prod
 }
 
 func (s *Service) createPriceHistory(timeout context.Context, tx pgx.Tx, productId int64, oldPrice, newPrice int32) *errs.AppError {
-	_, err := s.q.WithTx(tx).CreateProductPriceHistory(timeout, queries.CreateProductPriceHistoryParams{
+	id, err := helpers.SafeGetUserID(timeout)
+	if err != nil {
+		return errs.Internal(err)
+	}
+	_, err = s.q.WithTx(tx).CreateProductPriceHistory(timeout, queries.CreateProductPriceHistoryParams{
 		ProductID:      productId,
 		OldPriceKopeck: oldPrice,
 		NewPriceKopeck: newPrice,
-		UpdatedBy:      1, // TODO implement properly
+		UpdatedBy:      id,
 	})
 	if err != nil {
 		return errs.Internal(err)

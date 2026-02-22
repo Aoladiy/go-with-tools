@@ -17,6 +17,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const UserId = "user_id"
+
 type Service struct {
 	q *queries.Queries
 	p *pgxpool.Pool

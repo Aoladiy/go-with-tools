@@ -1,6 +1,10 @@
 package helpers
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"go-with-tools/internal/auth"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -47,4 +51,23 @@ func ToPgInt8(in *int) (out pgtype.Int8) {
 		}
 	}
 	return out
+}
+
+func SafeGetUserID(ctx context.Context) (int64, error) {
+	val := ctx.Value(auth.UserId)
+
+	if val == nil {
+		return 0, errors.New("user_id not found in context")
+	}
+
+	userID, ok := val.(int64)
+	if !ok {
+		return 0, fmt.Errorf("user_id has wrong type: expected int64, got %T", val)
+	}
+
+	if userID == 0 {
+		return 0, errors.New("user_id is invalid (0)")
+	}
+
+	return userID, nil
 }
