@@ -22,10 +22,7 @@ func New(q *queries.Queries, p *pgxpool.Pool) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
-	brand, err := s.q.CreateBrand(ctx, queries.CreateBrandParams{
-		Name: request.Name,
-		Slug: request.Slug,
-	})
+	brand, err := s.q.CreateBrand(ctx, mapRequestToCreateParams(request))
 	if err != nil {
 		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
 			return DTO.BrandResponse{}, errs.UniqueViolation(err, pgErr)
@@ -33,14 +30,7 @@ func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.Bra
 		return DTO.BrandResponse{}, errs.Internal(err)
 	}
 
-	brandResponse := DTO.BrandResponse{
-		Id:        brand.ID,
-		Name:      brand.Name,
-		Slug:      brand.Slug,
-		CreatedAt: brand.CreatedAt,
-		UpdatedAt: brand.UpdatedAt,
-	}
-	return brandResponse, nil
+	return mapCreateRowToResponse(brand), nil
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppError) {
@@ -51,13 +41,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppErr
 
 	brandsResponse := make([]DTO.BrandResponse, len(brands))
 	for i, brand := range brands {
-		brandsResponse[i] = DTO.BrandResponse{
-			Id:        brand.ID,
-			Name:      brand.Name,
-			Slug:      brand.Slug,
-			CreatedAt: brand.CreatedAt,
-			UpdatedAt: brand.UpdatedAt,
-		}
+		brandsResponse[i] = mapGetAllRowToResponse(brand)
 	}
 	return brandsResponse, nil
 }
@@ -72,22 +56,11 @@ func (s *Service) Get(ctx context.Context, id int64) (DTO.BrandResponse, *errs.A
 		return DTO.BrandResponse{}, errs.Internal(err)
 	}
 
-	brandResponse := DTO.BrandResponse{
-		Id:        brand.ID,
-		Name:      brand.Name,
-		Slug:      brand.Slug,
-		CreatedAt: brand.CreatedAt,
-		UpdatedAt: brand.UpdatedAt,
-	}
-	return brandResponse, nil
+	return mapGetRowToResponse(brand), nil
 }
 
 func (s *Service) Update(ctx context.Context, id int64, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
-	brand, err := s.q.UpdateBrand(ctx, queries.UpdateBrandParams{
-		ID:   id,
-		Name: request.Name,
-		Slug: request.Slug,
-	})
+	brand, err := s.q.UpdateBrand(ctx, mapRequestToUpdateParams(id, request))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.BrandResponse{}, errs.NotFound(err)
@@ -96,14 +69,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.BrandRequest
 		return DTO.BrandResponse{}, errs.Internal(err)
 	}
 
-	brandResponse := DTO.BrandResponse{
-		Id:        brand.ID,
-		Name:      brand.Name,
-		Slug:      brand.Slug,
-		CreatedAt: brand.CreatedAt,
-		UpdatedAt: brand.UpdatedAt,
-	}
-	return brandResponse, nil
+	return mapUpdateRowToResponse(brand), nil
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
@@ -115,7 +81,9 @@ func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
 	}
 
 	defer tx.Rollback(timeout)
-	rows, err := s.q.WithTx(tx).DeleteBrand(timeout, id)
+	qtx := s.q.WithTx(tx)
+
+	rows, err := qtx.DeleteBrand(timeout, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}
@@ -123,7 +91,7 @@ func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
 		return int(rows), errs.NotFound(errors.New("brand not found"))
 	}
 
-	_, err = s.q.WithTx(tx).DeleteProductsByBrandId(timeout, id)
+	_, err = qtx.DeleteProductsByBrandId(timeout, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}

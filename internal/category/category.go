@@ -34,11 +34,7 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 		}
 	}
 
-	category, err := s.q.CreateCategory(ctx, queries.CreateCategoryParams{
-		Name:     request.Name,
-		Slug:     request.Slug,
-		ParentID: request.ParentId,
-	})
+	category, err := s.q.CreateCategory(ctx, mapRequestToCreateParams(request))
 	if err != nil {
 		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
 			return DTO.CategoryResponse{}, errs.UniqueViolation(err, pgErr)
@@ -49,15 +45,7 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 		return DTO.CategoryResponse{}, errs.Internal(err)
 	}
 
-	categoryResponse := DTO.CategoryResponse{
-		Id:        category.ID,
-		Name:      category.Name,
-		Slug:      category.Slug,
-		ParentId:  category.ParentID,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
-	}
-	return categoryResponse, nil
+	return mapCreateRowToResponse(category), nil
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.AppError) {
@@ -68,14 +56,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.App
 
 	categoriesResponse := make([]DTO.CategoryResponse, len(categories))
 	for i, category := range categories {
-		categoriesResponse[i] = DTO.CategoryResponse{
-			Id:        category.ID,
-			Name:      category.Name,
-			Slug:      category.Slug,
-			ParentId:  category.ParentID,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		}
+		categoriesResponse[i] = mapGetAllRowToResponse(category)
 	}
 	return categoriesResponse, nil
 }
@@ -90,15 +71,7 @@ func (s *Service) Get(ctx context.Context, id int64) (DTO.CategoryResponse, *err
 		return DTO.CategoryResponse{}, errs.Internal(err)
 	}
 
-	categoryResponse := DTO.CategoryResponse{
-		Id:        category.ID,
-		Name:      category.Name,
-		Slug:      category.Slug,
-		ParentId:  category.ParentID,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
-	}
-	return categoryResponse, nil
+	return mapGetRowToResponse(category), nil
 }
 
 func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequest) (DTO.CategoryResponse, *errs.AppError) {
@@ -106,18 +79,13 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequ
 		_, appErr := s.Get(ctx, *request.ParentId)
 		if appErr != nil {
 			if appErr.Code == http.StatusNotFound {
-				return DTO.CategoryResponse{}, errs.NotFound(fmt.Errorf("parent category with id=%d not found | %w", id, appErr.Unwrap()))
+				return DTO.CategoryResponse{}, errs.NotFound(fmt.Errorf("parent category with id=%d not found | %w", *request.ParentId, appErr.Unwrap()))
 			}
 			return DTO.CategoryResponse{}, appErr
 		}
 	}
 
-	category, err := s.q.UpdateCategory(ctx, queries.UpdateCategoryParams{
-		ID:       id,
-		Name:     request.Name,
-		Slug:     request.Slug,
-		ParentID: request.ParentId,
-	})
+	category, err := s.q.UpdateCategory(ctx, mapRequestToUpdateParams(id, request))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.CategoryResponse{}, errs.NotFound(err)
@@ -131,15 +99,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequ
 		return DTO.CategoryResponse{}, errs.Internal(err)
 	}
 
-	categoryResponse := DTO.CategoryResponse{
-		Id:        category.ID,
-		Name:      category.Name,
-		Slug:      category.Slug,
-		ParentId:  category.ParentID,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
-	}
-	return categoryResponse, nil
+	return mapUpdateRowToResponse(category), nil
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
@@ -150,15 +110,16 @@ func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
 		return 0, errs.Internal(err)
 	}
 	defer tx.Rollback(timeout)
+	qtx := s.q.WithTx(tx)
 
-	rows, err := s.q.WithTx(tx).DeleteCategory(timeout, id)
+	rows, err := qtx.DeleteCategory(timeout, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}
 	if rows == 0 {
 		return int(rows), errs.NotFound(errors.New("category not found"))
 	}
-	_, err = s.q.WithTx(tx).DeleteProductsByCategoryId(timeout, id)
+	_, err = qtx.DeleteProductsByCategoryId(timeout, id)
 	if err != nil {
 		return 0, errs.Internal(err)
 	}
@@ -176,7 +137,8 @@ func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
 }
 
 func (s *Service) deleteRecursivelyByParentId(timeout context.Context, tx pgx.Tx, id int64) *errs.AppError {
-	idsByParentId, err := s.q.WithTx(tx).GetCategoriesByParentId(timeout, &id)
+	qtx := s.q.WithTx(tx)
+	idsByParentId, err := qtx.GetCategoriesByParentId(timeout, &id)
 	if err != nil {
 		return errs.Internal(err)
 	}
@@ -186,11 +148,11 @@ func (s *Service) deleteRecursivelyByParentId(timeout context.Context, tx pgx.Tx
 			return appErr
 		}
 	}
-	_, err = s.q.WithTx(tx).DeleteCategory(timeout, id)
+	_, err = qtx.DeleteCategory(timeout, id)
 	if err != nil {
 		return errs.Internal(err)
 	}
-	_, err = s.q.WithTx(tx).DeleteProductsByCategoryId(timeout, id)
+	_, err = qtx.DeleteProductsByCategoryId(timeout, id)
 	if err != nil {
 		return errs.Internal(err)
 	}

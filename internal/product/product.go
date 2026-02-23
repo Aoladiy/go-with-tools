@@ -40,15 +40,7 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 	defer tx.Rollback(timeout)
-	product, err := s.q.WithTx(tx).CreateProduct(timeout, queries.CreateProductParams{ //TODO handle case with non empty brand's and\or category's deleted_at
-		BrandID:     request.BrandId,
-		CategoryID:  request.CategoryId,
-		Name:        request.Name,
-		Slug:        request.Slug,
-		Description: helpers.DerefString(request.Description, ""),
-		PriceKopeck: request.PriceKopeck,
-		IsActive:    helpers.DerefBool(request.IsActive, true),
-	})
+	product, err := s.q.WithTx(tx).CreateProduct(timeout, mapRequestToCreateParams(request))
 	if err != nil {
 		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
 			return DTO.ProductResponse{}, errs.UniqueViolation(err, pgErr)
@@ -64,23 +56,11 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 		return DTO.ProductResponse{}, appErr
 	}
 
-	productResponse := DTO.ProductResponse{
-		Id:          product.ID,
-		BrandId:     product.BrandID,
-		CategoryId:  product.CategoryID,
-		Name:        product.Name,
-		Slug:        product.Slug,
-		Description: product.Description,
-		PriceKopeck: product.PriceKopeck,
-		IsActive:    product.IsActive,
-		CreatedAt:   product.CreatedAt,
-		UpdatedAt:   product.UpdatedAt,
-	}
 	err = tx.Commit(timeout)
 	if err != nil {
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
-	return productResponse, nil
+	return mapCreateRowToResponse(product), nil
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]DTO.ProductResponse, *errs.AppError) {
@@ -91,18 +71,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.ProductResponse, *errs.AppE
 
 	productsResponse := make([]DTO.ProductResponse, len(products))
 	for i, product := range products {
-		productsResponse[i] = DTO.ProductResponse{
-			Id:          product.ID,
-			BrandId:     product.BrandID,
-			CategoryId:  product.CategoryID,
-			Name:        product.Name,
-			Slug:        product.Slug,
-			Description: product.Description,
-			PriceKopeck: product.PriceKopeck,
-			IsActive:    product.IsActive,
-			CreatedAt:   product.CreatedAt,
-			UpdatedAt:   product.UpdatedAt,
-		}
+		productsResponse[i] = mapGetAllRowToResponse(product)
 	}
 	return productsResponse, nil
 }
@@ -117,19 +86,7 @@ func (s *Service) Get(ctx context.Context, id int64) (DTO.ProductResponse, *errs
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 
-	productResponse := DTO.ProductResponse{
-		Id:          product.ID,
-		BrandId:     product.BrandID,
-		CategoryId:  product.CategoryID,
-		Name:        product.Name,
-		Slug:        product.Slug,
-		Description: product.Description,
-		PriceKopeck: product.PriceKopeck,
-		IsActive:    product.IsActive,
-		CreatedAt:   product.CreatedAt,
-		UpdatedAt:   product.UpdatedAt,
-	}
-	return productResponse, nil
+	return mapGetRowToResponse(product), nil
 }
 
 func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductRequest) (DTO.ProductResponse, *errs.AppError) {
@@ -149,8 +106,9 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 	defer tx.Rollback(timeout)
+	qtx := s.q.WithTx(tx)
 
-	oldProduct, err := s.q.WithTx(tx).GetProduct(timeout, id)
+	oldProduct, err := qtx.GetProduct(timeout, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.ProductResponse{}, errs.NotFound(err)
@@ -159,16 +117,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 
-	product, err := s.q.WithTx(tx).UpdateProduct(timeout, queries.UpdateProductParams{ //TODO handle case with non empty brand's and\or category's deleted_at
-		ID:          id,
-		BrandID:     request.BrandId,
-		CategoryID:  request.CategoryId,
-		Name:        request.Name,
-		Slug:        request.Slug,
-		Description: helpers.DerefString(request.Description, ""),
-		PriceKopeck: request.PriceKopeck,
-		IsActive:    helpers.DerefBool(request.IsActive, true),
-	})
+	product, err := qtx.UpdateProduct(timeout, mapRequestToUpdateParams(id, request))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DTO.ProductResponse{}, errs.NotFound(err)
@@ -195,19 +144,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		return DTO.ProductResponse{}, errs.Internal(err)
 	}
 
-	productResponse := DTO.ProductResponse{
-		Id:          product.ID,
-		BrandId:     product.BrandID,
-		CategoryId:  product.CategoryID,
-		Name:        product.Name,
-		Slug:        product.Slug,
-		Description: product.Description,
-		PriceKopeck: product.PriceKopeck,
-		IsActive:    product.IsActive,
-		CreatedAt:   product.CreatedAt,
-		UpdatedAt:   product.UpdatedAt,
-	}
-	return productResponse, nil
+	return mapUpdateRowToResponse(product), nil
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
