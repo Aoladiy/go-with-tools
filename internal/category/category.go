@@ -7,8 +7,8 @@ import (
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
+	"go-with-tools/internal/helpers"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -103,56 +103,51 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequ
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) (int, *errs.AppError) {
-	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	tx, err := s.p.Begin(timeout)
-	if err != nil {
-		return 0, errs.Internal(err)
-	}
-	defer tx.Rollback(timeout)
-	qtx := s.q.WithTx(tx)
+	var rows int64
+	appErr := helpers.WithTx(ctx, s.p, s.q, func(timeout context.Context, q *queries.Queries) *errs.AppError {
+		var err error
+		rows, err = q.DeleteCategory(timeout, id)
+		if err != nil {
+			return errs.Internal(err)
+		}
+		if rows == 0 {
+			return errs.NotFound(errors.New("category not found"))
+		}
+		_, err = q.DeleteProductsByCategoryId(timeout, id)
+		if err != nil {
+			return errs.Internal(err)
+		}
 
-	rows, err := qtx.DeleteCategory(timeout, id)
-	if err != nil {
-		return 0, errs.Internal(err)
-	}
-	if rows == 0 {
-		return int(rows), errs.NotFound(errors.New("category not found"))
-	}
-	_, err = qtx.DeleteProductsByCategoryId(timeout, id)
-	if err != nil {
-		return 0, errs.Internal(err)
-	}
+		appErr := s.deleteRecursivelyByParentId(timeout, q, id)
+		if appErr != nil {
+			return appErr
+		}
 
-	appErr := s.deleteRecursivelyByParentId(timeout, tx, id)
+		return nil
+	})
 	if appErr != nil {
 		return 0, appErr
 	}
 
-	err = tx.Commit(timeout)
-	if err != nil {
-		return 0, errs.Internal(err)
-	}
 	return int(rows), nil
 }
 
-func (s *Service) deleteRecursivelyByParentId(timeout context.Context, tx pgx.Tx, id int64) *errs.AppError {
-	qtx := s.q.WithTx(tx)
-	idsByParentId, err := qtx.GetCategoriesByParentId(timeout, &id)
+func (s *Service) deleteRecursivelyByParentId(timeout context.Context, q *queries.Queries, id int64) *errs.AppError {
+	idsByParentId, err := q.GetCategoriesByParentId(timeout, &id)
 	if err != nil {
 		return errs.Internal(err)
 	}
 	for _, idByParentId := range idsByParentId {
-		appErr := s.deleteRecursivelyByParentId(timeout, tx, idByParentId)
+		appErr := s.deleteRecursivelyByParentId(timeout, q, idByParentId)
 		if appErr != nil {
 			return appErr
 		}
 	}
-	_, err = qtx.DeleteCategory(timeout, id)
+	_, err = q.DeleteCategory(timeout, id)
 	if err != nil {
 		return errs.Internal(err)
 	}
-	_, err = qtx.DeleteProductsByCategoryId(timeout, id)
+	_, err = q.DeleteProductsByCategoryId(timeout, id)
 	if err != nil {
 		return errs.Internal(err)
 	}

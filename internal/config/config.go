@@ -6,6 +6,10 @@ import (
 	"strconv"
 )
 
+const (
+	UserIdKey = "user_id"
+)
+
 type Config struct {
 	AppHost        string
 	AppPort        int

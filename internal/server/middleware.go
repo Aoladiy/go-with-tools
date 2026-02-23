@@ -3,15 +3,14 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"go-with-tools/internal/auth"
+	"go-with-tools/internal/config"
 	"go-with-tools/internal/errs"
 	"log"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthByJWT(jwtSecret string) gin.HandlerFunc {
@@ -29,14 +28,9 @@ func AuthByJWT(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 		token := bearerAndToken[1]
-		parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
-			if token.Method == jwt.SigningMethodHS256 {
-				return []byte(jwtSecret), nil
-			}
-			return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
-		})
-		if err != nil {
-			respondError(c, errs.Unauthorized(err))
+		parsedToken, appErr := auth.ParseToken(token, jwtSecret)
+		if appErr != nil {
+			respondError(c, appErr)
 			c.Abort()
 			return
 		}
@@ -52,8 +46,8 @@ func AuthByJWT(jwtSecret string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set(auth.UserId, int64(userID))
-		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), auth.UserId, int64(userID)))
+		c.Set(config.UserIdKey, int64(userID))
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), config.UserIdKey, int64(userID)))
 		c.Next()
 	}
 }

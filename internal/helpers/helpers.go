@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-with-tools/internal/auth"
+	"go-with-tools/internal/config"
+	"go-with-tools/internal/database/queries"
+	"go-with-tools/internal/errs"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func DerefString(pointer *string, defaultValue string) (result string) {
@@ -54,7 +57,7 @@ func ToPgInt8(in *int) (out pgtype.Int8) {
 }
 
 func SafeGetUserID(ctx context.Context) (int64, error) {
-	val := ctx.Value(auth.UserId)
+	val := ctx.Value(config.UserIdKey)
 
 	if val == nil {
 		return 0, errors.New("user_id not found in context")
@@ -70,4 +73,26 @@ func SafeGetUserID(ctx context.Context) (int64, error) {
 	}
 
 	return userID, nil
+}
+
+func WithTx(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, fn func(timeout context.Context, q *queries.Queries) *errs.AppError) *errs.AppError {
+	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	tx, err := pool.Begin(timeout)
+	if err != nil {
+		return errs.Internal(err)
+	}
+
+	defer tx.Rollback(timeout)
+
+	if appErr := fn(timeout, q.WithTx(tx)); appErr != nil {
+		return appErr
+	}
+
+	err = tx.Commit(timeout)
+	if err != nil {
+		return errs.Internal(err)
+	}
+	return nil
 }

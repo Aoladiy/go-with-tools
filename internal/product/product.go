@@ -8,7 +8,6 @@ import (
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
 	"go-with-tools/internal/helpers"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -33,33 +32,30 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("category with id=%d not found | %w", request.CategoryId, err))
 	}
 
-	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	tx, err := s.p.Begin(timeout)
-	if err != nil {
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
-	defer tx.Rollback(timeout)
-	product, err := s.q.WithTx(tx).CreateProduct(timeout, mapRequestToCreateParams(request))
-	if err != nil {
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.ProductResponse{}, errs.UniqueViolation(err, pgErr)
+	var product queries.CreateProductRow
+	appErr := helpers.WithTx(ctx, s.p, s.q, func(timeout context.Context, q *queries.Queries) *errs.AppError {
+		var err error
+		product, err = q.CreateProduct(timeout, mapRequestToCreateParams(request))
+		if err != nil {
+			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
+				return errs.UniqueViolation(err, pgErr)
+			}
+			if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
+				return errs.ForeignKeyViolation(err, pgErr)
+			}
+			return errs.Internal(err)
 		}
-		if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-			return DTO.ProductResponse{}, errs.ForeignKeyViolation(err, pgErr)
-		}
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
 
-	appErr := s.createPriceHistory(timeout, tx, product.ID, 0, product.PriceKopeck)
+		appErr := s.createPriceHistory(timeout, q, product.ID, 0, product.PriceKopeck)
+		if appErr != nil {
+			return appErr
+		}
+		return nil
+	})
 	if appErr != nil {
 		return DTO.ProductResponse{}, appErr
 	}
 
-	err = tx.Commit(timeout)
-	if err != nil {
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
 	return mapCreateRowToResponse(product), nil
 }
 
@@ -99,49 +95,44 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		return DTO.ProductResponse{}, errs.NotFound(fmt.Errorf("category with id=%d not found | %w", request.CategoryId, err))
 	}
 
-	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	tx, err := s.p.Begin(timeout)
-	if err != nil {
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
-	defer tx.Rollback(timeout)
-	qtx := s.q.WithTx(tx)
+	var product queries.UpdateProductRow
+	appErr := helpers.WithTx(ctx, s.p, s.q, func(timeout context.Context, q *queries.Queries) *errs.AppError {
+		var err error
+		oldProduct, err := q.GetProduct(timeout, id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return errs.NotFound(err)
+			}
 
-	oldProduct, err := qtx.GetProduct(timeout, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.ProductResponse{}, errs.NotFound(err)
+			return errs.Internal(err)
 		}
 
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
+		product, err = q.UpdateProduct(timeout, mapRequestToUpdateParams(id, request))
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return errs.NotFound(err)
+			}
+			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
+				return errs.UniqueViolation(err, pgErr)
+			}
+			if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
+				return errs.ForeignKeyViolation(err, pgErr)
+			}
 
-	product, err := qtx.UpdateProduct(timeout, mapRequestToUpdateParams(id, request))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.ProductResponse{}, errs.NotFound(err)
-		}
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.ProductResponse{}, errs.UniqueViolation(err, pgErr)
-		}
-		if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-			return DTO.ProductResponse{}, errs.ForeignKeyViolation(err, pgErr)
+			return errs.Internal(err)
 		}
 
-		return DTO.ProductResponse{}, errs.Internal(err)
-	}
-
-	if oldProduct.PriceKopeck != product.PriceKopeck {
-		appErr := s.createPriceHistory(timeout, tx, product.ID, oldProduct.PriceKopeck, product.PriceKopeck)
-		if appErr != nil {
-			return DTO.ProductResponse{}, appErr
+		if oldProduct.PriceKopeck != product.PriceKopeck {
+			appErr := s.createPriceHistory(timeout, q, product.ID, oldProduct.PriceKopeck, product.PriceKopeck)
+			if appErr != nil {
+				return appErr
+			}
 		}
-	}
 
-	err = tx.Commit(timeout)
-	if err != nil {
-		return DTO.ProductResponse{}, errs.Internal(err)
+		return nil
+	})
+	if appErr != nil {
+		return DTO.ProductResponse{}, appErr
 	}
 
 	return mapUpdateRowToResponse(product), nil
@@ -166,12 +157,12 @@ func (s *Service) GetPriceHistory(ctx context.Context, id int64) ([]queries.Prod
 	return byProductId, nil
 }
 
-func (s *Service) createPriceHistory(timeout context.Context, tx pgx.Tx, productId int64, oldPrice, newPrice int32) *errs.AppError {
+func (s *Service) createPriceHistory(timeout context.Context, q *queries.Queries, productId int64, oldPrice, newPrice int32) *errs.AppError {
 	id, err := helpers.SafeGetUserID(timeout)
 	if err != nil {
 		return errs.Internal(err)
 	}
-	_, err = s.q.WithTx(tx).CreateProductPriceHistory(timeout, queries.CreateProductPriceHistoryParams{
+	_, err = q.CreateProductPriceHistory(timeout, queries.CreateProductPriceHistoryParams{
 		ProductID:      productId,
 		OldPriceKopeck: oldPrice,
 		NewPriceKopeck: newPrice,

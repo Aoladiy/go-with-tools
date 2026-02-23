@@ -8,6 +8,7 @@ import (
 	"go-with-tools/internal/config"
 	"go-with-tools/internal/database/queries"
 	"go-with-tools/internal/errs"
+	"go-with-tools/internal/helpers"
 	"strconv"
 	"time"
 
@@ -17,7 +18,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const UserId = "user_id"
+const (
+	accessExp  = time.Minute * 15
+	refreshExp = time.Hour * 24 * 7
+)
 
 type Service struct {
 	q *queries.Queries
@@ -38,52 +42,29 @@ func (s *Service) SignUp(ctx context.Context, request DTO.SignUpRequest) (DTO.JW
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
 
-	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	tx, err := s.p.Begin(timeout)
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
-	}
-	defer tx.Rollback(timeout)
-	adminUser, err := s.q.WithTx(tx).CreateAdminUser(timeout, queries.CreateAdminUserParams{
-		Email:        request.Email,
-		PasswordHash: string(password),
-	})
-	if err != nil {
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.JWTResponse{}, errs.UniqueViolation(err, pgErr) // TODO handle case with unique email
+	var jwtResponse DTO.JWTResponse
+	appErr := helpers.WithTx(ctx, s.p, s.q, func(timeout context.Context, q *queries.Queries) *errs.AppError {
+		adminUser, err := q.CreateAdminUser(timeout, queries.CreateAdminUserParams{
+			Email:        request.Email,
+			PasswordHash: string(password),
+		})
+		if err != nil {
+			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
+				return errs.UniqueViolation(err, pgErr)
+			}
+			return errs.Internal(err)
 		}
-		return DTO.JWTResponse{}, errs.Internal(err)
-	}
-	secret := s.c.JwtSecret
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
-		Subject:   strconv.FormatInt(adminUser.ID, 10),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
+		var appErr *errs.AppError
+		jwtResponse, appErr = generateJWTResponse(s.c.JwtSecret, strconv.FormatInt(adminUser.ID, 10))
+		if appErr != nil {
+			return appErr
+		}
+		return nil
 	})
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
+	if appErr != nil {
+		return DTO.JWTResponse{}, appErr
 	}
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
-		Subject:   strconv.FormatInt(adminUser.ID, 10),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-	})
-	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
-	}
-	err = tx.Commit(timeout)
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
-	}
-	return DTO.JWTResponse{
-		AccessToken:  signedAccessToken,
-		RefreshToken: signedRefreshToken,
-	}, nil
+	return jwtResponse, nil
 }
 
 func (s *Service) SignIn(ctx context.Context, request DTO.SignInRequest) (DTO.JWTResponse, *errs.AppError) {
@@ -100,71 +81,63 @@ func (s *Service) SignIn(ctx context.Context, request DTO.SignInRequest) (DTO.JW
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Unauthorized(fmt.Errorf("wrong password %w", err))
 	}
-	secret := s.c.JwtSecret
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
-		Subject:   strconv.FormatInt(adminUser.ID, 10),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-	})
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
+	jwtResponse, appErr := generateJWTResponse(s.c.JwtSecret, strconv.FormatInt(adminUser.ID, 10))
+	if appErr != nil {
+		return DTO.JWTResponse{}, appErr
 	}
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", strconv.FormatInt(adminUser.ID, 10), time.Now().Nanosecond()),
-		Subject:   strconv.FormatInt(adminUser.ID, 10),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-	})
-	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
-	}
-	return DTO.JWTResponse{
-		AccessToken:  signedAccessToken,
-		RefreshToken: signedRefreshToken,
-	}, nil
+	return jwtResponse, nil
 }
 
 func (s *Service) TokenRefresh(ctx context.Context, request DTO.TokenRefreshRequest) (DTO.JWTResponse, *errs.AppError) {
 	secret := s.c.JwtSecret
-	withClaims, err := jwt.ParseWithClaims(request.RefreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
-		if token.Method == jwt.SigningMethodHS256 {
-			return []byte(secret), nil
-		}
-		return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
-	})
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Unauthorized(err)
+	withClaims, appErr := ParseToken(request.RefreshToken, secret)
+	if appErr != nil {
+		return DTO.JWTResponse{}, appErr
 	}
 	userID, err := withClaims.Claims.GetSubject()
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", userID, time.Now().Nanosecond()),
-		Subject:   userID,
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
+	jwtResponse, appErr := generateJWTResponse(secret, userID)
+	if appErr != nil {
+		return DTO.JWTResponse{}, appErr
+	}
+	return jwtResponse, nil
+}
+
+func newJWT(id string, exp, nbf time.Time) *jwt.Token {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ID:        fmt.Sprintf("%s-%d", id, time.Now().Nanosecond()),
+		Subject:   id,
+		ExpiresAt: jwt.NewNumericDate(exp),
+		NotBefore: jwt.NewNumericDate(nbf),
 	})
+}
+
+func generateJWTResponse(secret, id string) (DTO.JWTResponse, *errs.AppError) {
+	accessToken := newJWT(id, time.Now().Add(accessExp), time.Now())
 	signedAccessToken, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", userID, time.Now().Nanosecond()),
-		Subject:   userID,
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-	})
+	refreshToken := newJWT(id, time.Now().Add(refreshExp), time.Now())
 	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
-	return DTO.JWTResponse{
-		AccessToken:  signedAccessToken,
-		RefreshToken: signedRefreshToken,
-	}, nil
+	return mapJWTResponse(signedAccessToken, signedRefreshToken), nil
+}
+
+func ParseToken(token, secret string) (*jwt.Token, *errs.AppError) {
+	withClaims, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
+		if token.Method == jwt.SigningMethodHS256 {
+			return []byte(secret), nil
+		}
+		return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
+	})
+	if err != nil {
+		return nil, errs.Unauthorized(err)
+	}
+	return withClaims, nil
 }
