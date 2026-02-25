@@ -12,25 +12,27 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	accessExp  = time.Minute * 15
 	refreshExp = time.Hour * 24 * 7
+	SignedOut  = "signed-out-token-"
 )
 
 type Service struct {
-	q *queries.Queries
-	p *pgxpool.Pool
-	c config.Config
+	q   *queries.Queries
+	rdb *redis.Client
+	p   *pgxpool.Pool
+	c   config.Config
 }
 
-func New(q *queries.Queries, p *pgxpool.Pool, c config.Config) *Service {
-	return &Service{q: q, p: p, c: c}
+func New(q *queries.Queries, rdb *redis.Client, p *pgxpool.Pool, c config.Config) *Service {
+	return &Service{q: q, rdb: rdb, p: p, c: c}
 }
 
 func (s *Service) SignUp(ctx context.Context, request DTO.SignUpRequest) (DTO.JWTResponse, *errs.AppError) {
@@ -89,55 +91,53 @@ func (s *Service) SignIn(ctx context.Context, request DTO.SignInRequest) (DTO.JW
 }
 
 func (s *Service) TokenRefresh(ctx context.Context, request DTO.TokenRefreshRequest) (DTO.JWTResponse, *errs.AppError) {
-	secret := s.c.JwtSecret
-	withClaims, appErr := ParseToken(request.RefreshToken, secret)
+	withClaims, appErr := ParseToken(request.RefreshToken, s.c.JwtSecret)
 	if appErr != nil {
 		return DTO.JWTResponse{}, appErr
+	}
+	isTokenSignedOut, err := IsTokenSignedOut(ctx, s.rdb, withClaims.Raw)
+	if err != nil {
+		return DTO.JWTResponse{}, errs.Internal(err)
+	}
+	if isTokenSignedOut {
+		return DTO.JWTResponse{}, errs.Unauthorized(fmt.Errorf("token is in signed out tokens cache"))
 	}
 	userID, err := withClaims.Claims.GetSubject()
 	if err != nil {
 		return DTO.JWTResponse{}, errs.Internal(err)
 	}
 
-	jwtResponse, appErr := generateJWTResponse(secret, userID)
+	jwtResponse, appErr := generateJWTResponse(s.c.JwtSecret, userID)
 	if appErr != nil {
 		return DTO.JWTResponse{}, appErr
 	}
 	return jwtResponse, nil
 }
 
-func newJWT(id string, exp, nbf time.Time) *jwt.Token {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        fmt.Sprintf("%s-%d", id, time.Now().Nanosecond()),
-		Subject:   id,
-		ExpiresAt: jwt.NewNumericDate(exp),
-		NotBefore: jwt.NewNumericDate(nbf),
-	})
-}
-
-func generateJWTResponse(secret, id string) (DTO.JWTResponse, *errs.AppError) {
-	accessToken := newJWT(id, time.Now().Add(accessExp), time.Now())
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
+func (s *Service) SignOut(ctx context.Context, request DTO.SignOutRequest) *errs.AppError {
+	accessToken, appErr := ParseToken(request.AccessToken, s.c.JwtSecret)
+	if appErr != nil {
+		return appErr
 	}
-	refreshToken := newJWT(id, time.Now().Add(refreshExp), time.Now())
-	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
-	if err != nil {
-		return DTO.JWTResponse{}, errs.Internal(err)
+	refreshToken, appErr := ParseToken(request.RefreshToken, s.c.JwtSecret)
+	if appErr != nil {
+		return appErr
 	}
-	return mapJWTResponse(signedAccessToken, signedRefreshToken), nil
-}
-
-func ParseToken(token, secret string) (*jwt.Token, *errs.AppError) {
-	withClaims, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
-		if token.Method == jwt.SigningMethodHS256 {
-			return []byte(secret), nil
-		}
-		return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
-	})
+	accessTokenExp, err := accessToken.Claims.GetExpirationTime()
 	if err != nil {
-		return nil, errs.Unauthorized(err)
+		return errs.BadRequest(err)
 	}
-	return withClaims, nil
+	refreshTokenExp, err := refreshToken.Claims.GetExpirationTime()
+	if err != nil {
+		return errs.BadRequest(err)
+	}
+	set := s.rdb.Set(ctx, SignedOut+accessToken.Raw, true, accessTokenExp.Time.Sub(time.Now()))
+	if set.Err() != nil {
+		return errs.Internal(set.Err())
+	}
+	set = s.rdb.Set(ctx, SignedOut+refreshToken.Raw, true, refreshTokenExp.Time.Sub(time.Now()))
+	if set.Err() != nil {
+		return errs.Internal(set.Err())
+	}
+	return nil
 }

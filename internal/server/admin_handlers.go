@@ -87,8 +87,30 @@ func (s *Server) TokenRefreshHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, jwtResponse)
 }
 
+// SignOutHandler sign out
+//
+//	@Summary		Sign out
+//	@Description	Sign out
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body	DTO.SignOutRequest	true	"JWT access&refresh tokens"
+//	@Success		200
+//	@Failure		400	{object}	DTO.ErrorResponse	"invalid input"
+//	@Failure		500	{object}	DTO.ErrorResponse
+//	@Router			/admin/sign-out [post]
 func (s *Server) SignOutHandler(c *gin.Context) {
-	// TODO
+	request, err := bindJson[DTO.SignOutRequest](c)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	err = s.auth.SignOut(c.Request.Context(), request)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusOK)
 }
 
 // CreateProductHandler creates a new product

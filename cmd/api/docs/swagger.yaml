@@ -103,6 +103,13 @@ definitions:
       password:
         type: string
     type: object
+  DTO.SignOutRequest:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
   DTO.SignUpRequest:
     properties:
       email:
@@ -746,6 +753,34 @@ paths:
           schema:
             $ref: '#/definitions/DTO.ErrorResponse'
       summary: Admin login
+      tags:
+      - auth
+  /admin/sign-out:
+    post:
+      consumes:
+      - application/json
+      description: Sign out
+      parameters:
+      - description: JWT access&refresh tokens
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/DTO.SignOutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/DTO.ErrorResponse'
+      summary: Sign out
       tags:
       - auth
   /admin/sign-up:

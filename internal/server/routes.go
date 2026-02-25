@@ -39,7 +39,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	admin.POST("/sign-out", s.SignOutHandler)
 
 	products := admin.Group("/products")
-	products.Use(AuthByJWT(s.c.JwtSecret))
+	products.Use(AuthByJWT(s.rdb, s.c.JwtSecret))
 	products.POST("", s.CreateProductHandler)
 	products.GET("", s.GetAllProductHandler)
 	products.GET("/:id", s.GetProductHandler)
@@ -48,7 +48,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	products.GET("/:id/priceHistory", s.GetProductPriceHistory)
 
 	brands := admin.Group("/brands")
-	brands.Use(AuthByJWT(s.c.JwtSecret))
+	brands.Use(AuthByJWT(s.rdb, s.c.JwtSecret))
 	brands.POST("", s.CreateBrandHandler)
 	brands.GET("", s.GetAllBrandHandler)
 	brands.GET("/:id", s.GetBrandHandler)
@@ -56,14 +56,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 	brands.DELETE("/:id", s.DeleteBrandHandler)
 
 	categories := admin.Group("/categories")
-	categories.Use(AuthByJWT(s.c.JwtSecret))
+	categories.Use(AuthByJWT(s.rdb, s.c.JwtSecret))
 	categories.POST("", s.CreateCategoryHandler)
 	categories.GET("", s.GetAllCategoryHandler)
 	categories.GET("/:id", s.GetCategoryHandler)
 	categories.PUT("/:id", s.UpdateCategoryHandler)
 	categories.DELETE("/:id", s.DeleteCategoryHandler)
 
-	admin.POST("/inventory/adjustments", s.CreateInventoryMovementHandler).Use(AuthByJWT(s.c.JwtSecret))
+	admin.POST("/inventory/adjustments", s.CreateInventoryMovementHandler).Use(AuthByJWT(s.rdb, s.c.JwtSecret))
 
 	return r
 }

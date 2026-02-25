@@ -1,9 +1,11 @@
 package server
 
 import (
+	"errors"
 	"go-with-tools/internal/DTO"
 	"go-with-tools/internal/errs"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,4 +44,16 @@ func respondError(c *gin.Context, err *errs.AppError) {
 		err.Code,
 		DTO.ErrorResponse{Error: err.Error()},
 	)
+}
+
+func getJWTFromHeader(c *gin.Context) (string, *errs.AppError) {
+	authorization := c.GetHeader("Authorization")
+	bearerAndToken := strings.Split(authorization, " ")
+	if len(bearerAndToken) < 2 || strings.TrimSpace(bearerAndToken[1]) == "" {
+		return "", errs.Unauthorized(errors.New("wrong token format"))
+	}
+	if strings.ToLower(bearerAndToken[0]) != "bearer" {
+		return "", errs.Unauthorized(errors.New("invalid authorization header format"))
+	}
+	return bearerAndToken[1], nil
 }
