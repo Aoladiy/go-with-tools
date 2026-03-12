@@ -1,5 +1,39 @@
 services:
-  psql_bp:
+  air:
+    image: cosmtrek/air
+    working_dir: /www/air
+    ports:
+      - "${APP_PORT_AIR}:${APP_PORT_AIR}"
+    env_file:
+      - .env
+    environment:
+      - "APP_HOST=0.0.0.0"
+      - "APP_PORT=${APP_PORT_AIR}"
+      - "DB_HOST=db"
+      - "DB_PORT=5432"
+      - "REDIS_ADDR=cache:6379"
+    volumes:
+      - .:/www/air
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - .env
+    environment:
+      - "APP_HOST=0.0.0.0"
+      - "DB_HOST=db"
+      - "DB_PORT=5432"
+      - "REDIS_ADDR=cache:6379"
+    #    volumes:
+    #      - ./.env:/www/app/.env:ro
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
     image: postgres:latest
     restart: unless-stopped
     environment:
@@ -7,9 +41,36 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DOCKER_EXPOSED_DB_PORT}:5432"
     volumes:
-      - psql_volume_bp:/var/lib/postgresql/data
-
+      - ~/.docker-volumes/go-with-tools/pgdata:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE} -h localhost" ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  cache:
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+      - "${DOCKER_EXPOSED_REDIS_PORT}:6379"
+    volumes:
+      - cache_volume:/data
+  migrate:
+    image: golang:1.25-alpine
+    working_dir: /www/app
+    env_file:
+      - .env
+    environment:
+      - "GOOSE_DBSTRING=postgres://${DB_USERNAME}:${DB_PASSWORD}@db:5432/${DB_DATABASE}"
+    volumes:
+      - .:/www/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "go install github.com/pressly/goose/v3/cmd/goose@latest && goose up"
+    profiles:
+      - tools
 volumes:
-  psql_volume_bp:
+  cache_volume:
