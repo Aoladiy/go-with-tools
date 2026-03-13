@@ -12,23 +12,22 @@ build:
 # Run the application
 run:
 	@go run cmd/api/main.go
-# Create DB container
-#docker-run:
-#	@if docker compose up --build 2>/dev/null; then \
-#		: ; \
-#	else \
-#		echo "Falling back to Docker Compose V1"; \
-#		docker-compose up --build; \
-#	fi
 
-# Shutdown DB container
-#docker-down:
-#	@if docker compose down 2>/dev/null; then \
-#		: ; \
-#	else \
-#		echo "Falling back to Docker Compose V1"; \
-#		docker-compose down; \
-#	fi
+# Up app in docker
+up:
+	docker compose --profile dev up -d
+
+# Down app in docker
+down:
+	docker compose --profile dev down
+
+# Up prod app in docker
+prod-up:
+	docker compose --profile prod up --build -d
+
+# Down prod app in docker
+prod-down:
+	docker compose --profile prod down
 
 # Test the application
 test:
@@ -78,4 +77,4 @@ swag:
 migrate-in-docker:
 	docker compose run --rm migrate
 
-.PHONY: all build run test clean watch docker-run docker-down itest db-schema sqlc swag migrate-in-docker
+.PHONY: all build run test clean watch up down prod-up prod-down itest db-schema sqlc swag migrate-in-docker

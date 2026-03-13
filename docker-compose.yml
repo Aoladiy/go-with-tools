@@ -14,6 +14,10 @@ services:
       - "REDIS_ADDR=cache:6379"
     volumes:
       - .:/www/air
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    profiles:
+      - dev
   web:
     build:
       context: .
@@ -28,11 +32,11 @@ services:
       - "DB_HOST=db"
       - "DB_PORT=5432"
       - "REDIS_ADDR=cache:6379"
-    #    volumes:
-    #      - ./.env:/www/app/.env:ro
     depends_on:
       db:
         condition: service_healthy
+    profiles:
+      - prod
   db:
     image: postgres:latest
     restart: unless-stopped
@@ -74,3 +78,5 @@ services:
       - tools
 volumes:
   cache_volume:
+  go_mod_cache:
+  go_build_cache:
