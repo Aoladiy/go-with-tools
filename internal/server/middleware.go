@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-with-tools/internal/auth"
-	"go-with-tools/internal/config"
-	"go-with-tools/internal/errs"
 	"log"
 	"strconv"
+
+	"github.com/Aoladiy/go-with-tools/internal/auth"
+	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

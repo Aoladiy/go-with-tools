@@ -3,9 +3,10 @@ package database
 import (
 	"context"
 	"fmt"
-	"go-with-tools/internal/config"
 	"log"
 	"time"
+
+	"github.com/Aoladiy/go-with-tools/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"

@@ -1,4 +1,4 @@
-module go-with-tools
+module github.com/Aoladiy/go-with-tools
 
 go 1.25.5
 

@@ -2,9 +2,10 @@ package cache
 
 import (
 	"context"
-	"go-with-tools/internal/config"
 	"log"
 	"time"
+
+	"github.com/Aoladiy/go-with-tools/internal/config"
 
 	"github.com/redis/go-redis/v9"
 )

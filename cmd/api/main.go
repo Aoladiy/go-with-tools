@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	_ "go-with-tools/cmd/api/docs"
-	"go-with-tools/internal/config"
-	"go-with-tools/internal/server"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "github.com/Aoladiy/go-with-tools/cmd/api/docs"
+	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/server"
 )
 
 func gracefulShutdown(apiServer *server.Server, done chan bool) {

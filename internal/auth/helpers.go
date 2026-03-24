@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-with-tools/internal/DTO"
-	"go-with-tools/internal/errs"
 	"time"
+
+	"github.com/Aoladiy/go-with-tools/internal/DTO"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"

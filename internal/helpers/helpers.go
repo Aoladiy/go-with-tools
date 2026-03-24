@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-with-tools/internal/config"
-	"go-with-tools/internal/database/queries"
-	"go-with-tools/internal/errs"
 	"time"
+
+	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/database/queries"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"

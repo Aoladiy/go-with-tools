@@ -1,8 +1,9 @@
 package server
 
 import (
-	"go-with-tools/internal/DTO"
 	"net/http"
+
+	"github.com/Aoladiy/go-with-tools/internal/DTO"
 
 	"github.com/gin-gonic/gin"
 )

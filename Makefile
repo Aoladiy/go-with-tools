@@ -17,17 +17,21 @@ run:
 up:
 	docker compose --profile dev up -d
 
+# Logs prod app in docker
+logs:
+	docker logs go-with-tools-air-1 -f
+
 # Down app in docker
 down:
-	docker compose --profile dev down
+	docker compose --profile dev down && docker compose --profile prod down
 
 # Up prod app in docker
 prod-up:
 	docker compose --profile prod up --build -d
 
-# Down prod app in docker
-prod-down:
-	docker compose --profile prod down
+# Logs prod app in docker
+prod-logs:
+	docker logs go-with-tools-web-1 -f
 
 # Test the application
 test:
@@ -77,4 +81,4 @@ swag:
 migrate-in-docker:
 	docker compose run --rm migrate
 
-.PHONY: all build run test clean watch up down prod-up prod-down itest db-schema sqlc swag migrate-in-docker
+.PHONY: all build run test clean watch up logs down prod-up prod-logs prod-down itest db-schema sqlc swag migrate-in-docker

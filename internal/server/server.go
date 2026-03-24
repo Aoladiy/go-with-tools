@@ -3,20 +3,21 @@ package server
 import (
 	"context"
 	"fmt"
-	"go-with-tools/internal/auth"
-	"go-with-tools/internal/brand"
-	"go-with-tools/internal/cache"
-	"go-with-tools/internal/category"
-	"go-with-tools/internal/config"
-	"go-with-tools/internal/database/queries"
-	"go-with-tools/internal/product"
 	"net/http"
 	"time"
+
+	"github.com/Aoladiy/go-with-tools/internal/auth"
+	"github.com/Aoladiy/go-with-tools/internal/brand"
+	"github.com/Aoladiy/go-with-tools/internal/cache"
+	"github.com/Aoladiy/go-with-tools/internal/category"
+	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/database/queries"
+	"github.com/Aoladiy/go-with-tools/internal/product"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/redis/go-redis/v9"
 
-	"go-with-tools/internal/database"
+	"github.com/Aoladiy/go-with-tools/internal/database"
 )
 
 type Server struct {

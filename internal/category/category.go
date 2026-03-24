@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-with-tools/internal/DTO"
-	"go-with-tools/internal/database/queries"
-	"go-with-tools/internal/errs"
-	"go-with-tools/internal/helpers"
 	"net/http"
+
+	"github.com/Aoladiy/go-with-tools/internal/DTO"
+	"github.com/Aoladiy/go-with-tools/internal/database/queries"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
+	"github.com/Aoladiy/go-with-tools/internal/helpers"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

@@ -1,6 +1,6 @@
 package auth
 
-import "go-with-tools/internal/DTO"
+import "github.com/Aoladiy/go-with-tools/internal/DTO"
 
 func mapJWTResponse(accessToken, refreshToken string) DTO.JWTResponse {
 	return DTO.JWTResponse{

@@ -2,10 +2,11 @@ package server
 
 import (
 	"errors"
-	"go-with-tools/internal/DTO"
-	"go-with-tools/internal/errs"
 	"strconv"
 	"strings"
+
+	"github.com/Aoladiy/go-with-tools/internal/DTO"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/gin-gonic/gin"
 )

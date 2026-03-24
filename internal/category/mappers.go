@@ -1,8 +1,8 @@
 package category
 
 import (
-	"go-with-tools/internal/DTO"
-	"go-with-tools/internal/database/queries"
+	"github.com/Aoladiy/go-with-tools/internal/DTO"
+	"github.com/Aoladiy/go-with-tools/internal/database/queries"
 )
 
 func mapRequestToCreateParams(request DTO.CategoryRequest) queries.CreateCategoryParams {
