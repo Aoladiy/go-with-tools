@@ -7,15 +7,15 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/Aoladiy/go-with-tools/gen"
 	"github.com/Aoladiy/go-with-tools/internal/auth"
 	"github.com/Aoladiy/go-with-tools/internal/config"
 	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
-func AuthByJWT(rdb *redis.Client, jwtSecret string) gin.HandlerFunc {
+func AuthByJWT(client gen.AuthMicroserviceClient, jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, appErr := getJWTFromHeader(c)
 		if appErr != nil {
@@ -29,13 +29,13 @@ func AuthByJWT(rdb *redis.Client, jwtSecret string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		isTokenSignedOut, err := auth.IsTokenSignedOut(c.Request.Context(), rdb, parsedToken.Raw)
+		signedOutResponse, err := client.IsTokenSignedOut(c.Request.Context(), &gen.IsTokenSignedOutRequest{Token: parsedToken.Raw})
 		if err != nil {
 			respondError(c, errs.Internal(err))
 			c.Abort()
 			return
 		}
-		if isTokenSignedOut {
+		if signedOutResponse.IsTokenSignedOut {
 			respondError(c, errs.Unauthorized(fmt.Errorf("token is in signed out tokens cache")))
 			c.Abort()
 			return

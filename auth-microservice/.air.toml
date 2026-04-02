@@ -1,3 +1,6 @@
+#:schema https://json.schemastore.org/any.json
+
+env_files = []
 root = "."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
@@ -5,14 +8,16 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main cmd/api/main.go"
+  cmd = "go build -o ./tmp/main ./cmd/api/main.go"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules"]
+  entrypoint = ["./tmp/main"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""
+  ignore_dangerous_root_dir = false
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   include_file = []
@@ -36,10 +41,17 @@ tmp_dir = "tmp"
 
 [log]
   main_only = false
+  silent = false
   time = false
 
 [misc]
   clean_on_exit = false
+
+[proxy]
+  app_port = 0
+  app_start_timeout = 0
+  enabled = false
+  proxy_port = 0
 
 [screen]
   clear_on_rebuild = false

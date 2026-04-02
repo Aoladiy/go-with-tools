@@ -3,7 +3,9 @@ package server
 import (
 	"net/http"
 
+	"github.com/Aoladiy/go-with-tools/gen"
 	"github.com/Aoladiy/go-with-tools/internal/DTO"
+	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,14 +24,14 @@ import (
 //	@Failure		500		{object}	DTO.ErrorResponse
 //	@Router			/admin/sign-up [post]
 func (s *Server) SignUpHandler(c *gin.Context) {
-	request, err := bindJson[DTO.SignUpRequest](c)
-	if err != nil {
-		respondError(c, err)
+	request, appErr := bindJson[DTO.SignUpRequest](c)
+	if appErr != nil {
+		respondError(c, appErr)
 		return
 	}
-	jwtResponse, err := s.auth.SignUp(c.Request.Context(), request)
+	jwtResponse, err := s.auth.SignUp(c.Request.Context(), &gen.SignUpRequest{Email: request.Email, Password: request.Password})
 	if err != nil {
-		respondError(c, err)
+		respondError(c, errs.Unauthorized(err))
 		return
 	}
 	c.JSON(http.StatusOK, jwtResponse)
@@ -49,14 +51,14 @@ func (s *Server) SignUpHandler(c *gin.Context) {
 //	@Failure		500		{object}	DTO.ErrorResponse
 //	@Router			/admin/sign-in [post]
 func (s *Server) SignInHandler(c *gin.Context) {
-	request, err := bindJson[DTO.SignInRequest](c)
-	if err != nil {
-		respondError(c, err)
+	request, appErr := bindJson[DTO.SignInRequest](c)
+	if appErr != nil {
+		respondError(c, appErr)
 		return
 	}
-	jwtResponse, err := s.auth.SignIn(c.Request.Context(), request)
+	jwtResponse, err := s.auth.SignIn(c.Request.Context(), &gen.SignInRequest{Email: request.Email, Password: request.Password})
 	if err != nil {
-		respondError(c, err)
+		respondError(c, errs.Unauthorized(err))
 		return
 	}
 	c.JSON(http.StatusOK, jwtResponse)
@@ -75,14 +77,14 @@ func (s *Server) SignInHandler(c *gin.Context) {
 //	@Failure		500		{object}	DTO.ErrorResponse
 //	@Router			/admin/token-refresh [post]
 func (s *Server) TokenRefreshHandler(c *gin.Context) {
-	request, err := bindJson[DTO.TokenRefreshRequest](c)
-	if err != nil {
-		respondError(c, err)
+	request, appErr := bindJson[DTO.TokenRefreshRequest](c)
+	if appErr != nil {
+		respondError(c, appErr)
 		return
 	}
-	jwtResponse, err := s.auth.TokenRefresh(c.Request.Context(), request)
+	jwtResponse, err := s.auth.TokenRefresh(c.Request.Context(), &gen.TokenRefreshRequest{RefreshToken: request.RefreshToken})
 	if err != nil {
-		respondError(c, err)
+		respondError(c, errs.Unauthorized(err))
 		return
 	}
 	c.JSON(http.StatusOK, jwtResponse)
@@ -101,14 +103,14 @@ func (s *Server) TokenRefreshHandler(c *gin.Context) {
 //	@Failure		500	{object}	DTO.ErrorResponse
 //	@Router			/admin/sign-out [post]
 func (s *Server) SignOutHandler(c *gin.Context) {
-	request, err := bindJson[DTO.SignOutRequest](c)
-	if err != nil {
-		respondError(c, err)
+	request, appErr := bindJson[DTO.SignOutRequest](c)
+	if appErr != nil {
+		respondError(c, appErr)
 		return
 	}
-	err = s.auth.SignOut(c.Request.Context(), request)
+	_, err := s.auth.SignOut(c.Request.Context(), &gen.SignOutRequest{AccessToken: request.AccessToken, RefreshToken: request.RefreshToken})
 	if err != nil {
-		respondError(c, err)
+		respondError(c, errs.Internal(err))
 		return
 	}
 	c.Status(http.StatusOK)

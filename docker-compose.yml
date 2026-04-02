@@ -9,6 +9,8 @@ services:
     environment:
       - "APP_HOST=0.0.0.0"
       - "APP_PORT=${APP_PORT_AIR}"
+      - "AUTH_HOST=auth-air"
+      - "AUTH_PORT=${AUTH_PORT_AIR}"
       - "DB_HOST=db"
       - "DB_PORT=5432"
       - "REDIS_ADDR=cache:6379"
@@ -16,6 +18,25 @@ services:
       - .:/www/air
       - go_mod_cache:/go/pkg/mod
       - go_build_cache:/root/.cache/go-build
+    profiles:
+      - dev
+  auth-air:
+    image: cosmtrek/air
+    working_dir: /www/air/auth-microservice
+    ports:
+      - "${AUTH_PORT_AIR}:${AUTH_PORT_AIR}"
+    env_file:
+      - .env
+    environment:
+      - "APP_HOST=0.0.0.0"
+      - "APP_PORT=${AUTH_PORT_AIR}"
+      - "DB_HOST=db"
+      - "DB_PORT=5432"
+      - "REDIS_ADDR=cache:6379"
+    volumes:
+      - .:/www/air
+      - auth_go_mod_cache:/go/pkg/mod
+      - auth_go_build_cache:/root/.cache/go-build
     profiles:
       - dev
   web:
@@ -80,3 +101,5 @@ volumes:
   cache_volume:
   go_mod_cache:
   go_build_cache:
+  auth_go_mod_cache:
+  auth_go_build_cache:

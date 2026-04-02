@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"strconv"
-	"time"
 )
 
 const (
@@ -12,42 +11,35 @@ const (
 )
 
 type Config struct {
-	AppHost         string
-	AppPort         int
-	DbHost          string
-	DbPort          string
-	DbUsername      string
-	DbPassword      string
-	DbDatabaseName  string
-	DbSchema        string
-	RdbAddr         string
-	RdbUsr          string
-	RdbPsw          string
-	RdbId           int
-	RdbMaxRetries   int
-	RdbReadTimeout  time.Duration
-	RdbWriteTimeout time.Duration
-	RdbMinIdleConns int
-	JwtSecret       string
+	AppHost string
+	AppPort int
+
+	AuthHost string
+	AuthPort int
+
+	DbHost         string
+	DbPort         string
+	DbUsername     string
+	DbPassword     string
+	DbDatabaseName string
+	DbSchema       string
+
+	JwtSecret string
 }
 
 func (c *Config) LoadEnv() error {
 	appHost, appHostExists := os.LookupEnv("APP_HOST")
 	appPort, appPortExists := os.LookupEnv("APP_PORT")
+	authHost, authHostExists := os.LookupEnv("AUTH_HOST")
+	authPort, authPortExists := os.LookupEnv("AUTH_PORT")
+
 	dbHost, dbHostExists := os.LookupEnv("DB_HOST")
 	dbPort, dbPortExists := os.LookupEnv("DB_PORT")
 	dbUsername, dbUsernameExists := os.LookupEnv("DB_USERNAME")
 	dbPassword, dbPasswordExists := os.LookupEnv("DB_PASSWORD")
 	db, dbExists := os.LookupEnv("DB_DATABASE")
 	dbSchema, dbSchemaExists := os.LookupEnv("DB_SCHEMA")
-	rdbAddr, rdbAddrExists := os.LookupEnv("REDIS_ADDR")
-	rdbUsr, rdbUsrExists := os.LookupEnv("REDIS_USERNAME")
-	rdbPsw, rdbPswExists := os.LookupEnv("REDIS_PASSWORD")
-	rdbId, rdbIdExists := os.LookupEnv("REDIS_DB_IDENTIFIER")
-	rdbMaxRetries, rdbMaxRetriesExists := os.LookupEnv("REDIS_MAX_RETRIES")
-	rdbReadTimeout, rdbReadTimeoutExists := os.LookupEnv("REDIS_READ_TIMEOUT")
-	rdbWriteTimeout, rdbWriteTimeoutExists := os.LookupEnv("REDIS_WRITE_TIMEOUT")
-	rdbMinIdleConns, rdbMinIdleConnsExists := os.LookupEnv("REDIS_MIN_IDLE_CONNS")
+
 	jwtSecret, jwtSecretExists := os.LookupEnv("JWT_SECRET")
 
 	if !appHostExists {
@@ -56,6 +48,14 @@ func (c *Config) LoadEnv() error {
 	if !appPortExists {
 		return errors.New("APP_PORT .env isn't set")
 	}
+
+	if !authHostExists {
+		return errors.New("AUTH_HOST .env isn't set")
+	}
+	if !authPortExists {
+		return errors.New("AUTH_PORT .env isn't set")
+	}
+
 	if !dbHostExists {
 		return errors.New("DB_HOST .env isn't set")
 	}
@@ -74,30 +74,7 @@ func (c *Config) LoadEnv() error {
 	if !dbSchemaExists {
 		return errors.New("DB_SCHEMA .env isn't set")
 	}
-	if !rdbAddrExists {
-		return errors.New("REDIS_ADDR .env isn't set")
-	}
-	if !rdbUsrExists {
-		return errors.New("REDIS_USERNAME .env isn't set")
-	}
-	if !rdbPswExists {
-		return errors.New("REDIS_PASSWORD .env isn't set")
-	}
-	if !rdbIdExists {
-		return errors.New("REDIS_DB_IDENTIFIER .env isn't set")
-	}
-	if !rdbMaxRetriesExists {
-		return errors.New("REDIS_MAX_RETRIES .env isn't set")
-	}
-	if !rdbReadTimeoutExists {
-		return errors.New("REDIS_READ_TIMEOUT .env isn't set")
-	}
-	if !rdbWriteTimeoutExists {
-		return errors.New("REDIS_WRITE_TIMEOUT .env isn't set")
-	}
-	if !rdbMinIdleConnsExists {
-		return errors.New("REDIS_MIN_IDLE_CONNS .env isn't set")
-	}
+
 	if !jwtSecretExists {
 		return errors.New("JWT_SECRET .env isn't set")
 	}
@@ -107,47 +84,25 @@ func (c *Config) LoadEnv() error {
 		return err
 	}
 
-	intRdbId, err := strconv.Atoi(rdbId)
-	if err != nil {
-		return err
-	}
-
-	intRdbMaxRetries, err := strconv.Atoi(rdbMaxRetries)
-	if err != nil {
-		return err
-	}
-
-	intRdbReadTimeout, err := strconv.Atoi(rdbReadTimeout)
-	if err != nil {
-		return err
-	}
-
-	intRdbWriteTimeout, err := strconv.Atoi(rdbWriteTimeout)
-	if err != nil {
-		return err
-	}
-
-	intRdbMinIdleConns, err := strconv.Atoi(rdbMinIdleConns)
+	intAuthPort, err := strconv.Atoi(authPort)
 	if err != nil {
 		return err
 	}
 
 	c.AppHost = appHost
 	c.AppPort = intAppPort
+
+	c.AuthHost = authHost
+	c.AuthPort = intAuthPort
+
 	c.DbHost = dbHost
 	c.DbPort = dbPort
 	c.DbUsername = dbUsername
 	c.DbPassword = dbPassword
 	c.DbDatabaseName = db
 	c.DbSchema = dbSchema
-	c.RdbAddr = rdbAddr
-	c.RdbUsr = rdbUsr
-	c.RdbPsw = rdbPsw
-	c.RdbId = intRdbId
-	c.RdbMaxRetries = intRdbMaxRetries
-	c.RdbReadTimeout = time.Duration(intRdbReadTimeout) * time.Second
-	c.RdbWriteTimeout = time.Duration(intRdbWriteTimeout) * time.Second
-	c.RdbMinIdleConns = intRdbMinIdleConns
+
 	c.JwtSecret = jwtSecret
+
 	return nil
 }

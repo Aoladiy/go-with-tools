@@ -1,0 +1,39 @@
+syntax = "proto3";
+package auth;
+option go_package = "github.com/Aoladiy/go-with-tools/gen";
+import "google/protobuf/empty.proto";
+
+service AuthMicroservice {
+  rpc SignUp(SignUpRequest) returns (JWTResponse);
+  rpc SignIn(SignInRequest) returns (JWTResponse);
+  rpc TokenRefresh(TokenRefreshRequest) returns (JWTResponse);
+  rpc SignOut(SignOutRequest) returns (google.protobuf.Empty);
+  rpc IsTokenSignedOut(IsTokenSignedOutRequest) returns (IsTokenSignedOutResponse);
+}
+
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+}
+message SignInRequest {
+  string email = 1;
+  string password = 2;
+}
+message TokenRefreshRequest {
+  string refresh_token = 1;
+}
+message SignOutRequest {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+message IsTokenSignedOutRequest {
+  string token = 1;
+}
+
+message JWTResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+message IsTokenSignedOutResponse {
+  bool is_token_signed_out = 1;
+}

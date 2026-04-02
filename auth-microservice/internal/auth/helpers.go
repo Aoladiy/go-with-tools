@@ -2,11 +2,10 @@ package auth
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/errs"
 	"github.com/Aoladiy/go-with-tools/gen"
-	"github.com/Aoladiy/go-with-tools/internal/errs"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -42,7 +41,6 @@ func ParseToken(token, secret string) (*jwt.Token, *errs.AppError) {
 		return nil, fmt.Errorf("wrong signing method - %s", token.Method.Alg())
 	})
 	if err != nil {
-		log.Println(token)
 		return nil, errs.Unauthorized(err)
 	}
 	return withClaims, nil

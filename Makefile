@@ -81,4 +81,7 @@ swag:
 migrate-in-docker:
 	docker compose run --rm migrate
 
-.PHONY: all build run test clean watch up logs down prod-up prod-logs prod-down itest db-schema sqlc swag migrate-in-docker
+proto:
+	rm -r ./gen/* && protoc --go_out=./gen --go_opt=paths=source_relative --go-grpc_out=./gen --go-grpc_opt=paths=source_relative auth.proto
+
+.PHONY: all build run test clean watch up logs down prod-up prod-logs prod-down itest db-schema sqlc swag migrate-in-docker proto

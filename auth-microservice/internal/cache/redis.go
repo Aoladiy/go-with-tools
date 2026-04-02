@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/config"
 
 	"github.com/redis/go-redis/v9"
 )

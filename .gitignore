@@ -26,7 +26,7 @@ tmp/
 .env
 
 # Project build
-main
+tmp/main
 *templ.go
 
 # OS X generated file
@@ -35,6 +35,4 @@ main
 # generated files
 internal/database/schema.sql
 internal/database/queries
-
-# microservices
-auth-microservice/
+gen/
