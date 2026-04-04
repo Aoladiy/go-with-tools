@@ -9,7 +9,6 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/errs"
 	"github.com/Aoladiy/go-with-tools/internal/helpers"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,10 +24,7 @@ func New(q *queries.Queries, p *pgxpool.Pool) *Service {
 func (s *Service) Create(ctx context.Context, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
 	brand, err := s.q.CreateBrand(ctx, mapRequestToCreateParams(request))
 	if err != nil {
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.BrandResponse{}, errs.UniqueViolation(err, pgErr)
-		}
-		return DTO.BrandResponse{}, errs.Internal(err)
+		return DTO.BrandResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapCreateRowToResponse(brand), nil
@@ -50,11 +46,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.BrandResponse, *errs.AppErr
 func (s *Service) Get(ctx context.Context, id int64) (DTO.BrandResponse, *errs.AppError) {
 	brand, err := s.q.GetBrand(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.BrandResponse{}, errs.NotFound(err)
-		}
-
-		return DTO.BrandResponse{}, errs.Internal(err)
+		return DTO.BrandResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapGetRowToResponse(brand), nil
@@ -63,11 +55,7 @@ func (s *Service) Get(ctx context.Context, id int64) (DTO.BrandResponse, *errs.A
 func (s *Service) Update(ctx context.Context, id int64, request DTO.BrandRequest) (DTO.BrandResponse, *errs.AppError) {
 	brand, err := s.q.UpdateBrand(ctx, mapRequestToUpdateParams(id, request))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.BrandResponse{}, errs.NotFound(err)
-		}
-
-		return DTO.BrandResponse{}, errs.Internal(err)
+		return DTO.BrandResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapUpdateRowToResponse(brand), nil

@@ -10,7 +10,6 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/errs"
 	"github.com/Aoladiy/go-with-tools/internal/helpers"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -38,13 +37,7 @@ func (s *Service) Create(ctx context.Context, request DTO.ProductRequest) (DTO.P
 		var err error
 		product, err = q.CreateProduct(timeout, mapRequestToCreateParams(request))
 		if err != nil {
-			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-				return errs.UniqueViolation(err, pgErr)
-			}
-			if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-				return errs.ForeignKeyViolation(err, pgErr)
-			}
-			return errs.Internal(err)
+			return errs.FromPgErr(err)
 		}
 
 		appErr := s.createPriceHistory(timeout, q, product.ID, 0, product.PriceKopeck)
@@ -76,11 +69,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.ProductResponse, *errs.AppE
 func (s *Service) Get(ctx context.Context, id int64) (DTO.ProductResponse, *errs.AppError) {
 	product, err := s.q.GetProduct(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.ProductResponse{}, errs.NotFound(err)
-		}
-
-		return DTO.ProductResponse{}, errs.Internal(err)
+		return DTO.ProductResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapGetRowToResponse(product), nil
@@ -101,26 +90,12 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.ProductReque
 		var err error
 		oldProduct, err := q.GetProduct(timeout, id)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return errs.NotFound(err)
-			}
-
-			return errs.Internal(err)
+			return errs.FromPgErr(err)
 		}
 
 		product, err = q.UpdateProduct(timeout, mapRequestToUpdateParams(id, request))
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return errs.NotFound(err)
-			}
-			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-				return errs.UniqueViolation(err, pgErr)
-			}
-			if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-				return errs.ForeignKeyViolation(err, pgErr)
-			}
-
-			return errs.Internal(err)
+			return errs.FromPgErr(err)
 		}
 
 		if oldProduct.PriceKopeck != product.PriceKopeck {

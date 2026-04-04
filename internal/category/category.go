@@ -11,7 +11,6 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/errs"
 	"github.com/Aoladiy/go-with-tools/internal/helpers"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -37,13 +36,7 @@ func (s *Service) Create(ctx context.Context, request DTO.CategoryRequest) (DTO.
 
 	category, err := s.q.CreateCategory(ctx, mapRequestToCreateParams(request))
 	if err != nil {
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.CategoryResponse{}, errs.UniqueViolation(err, pgErr)
-		}
-		if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-			return DTO.CategoryResponse{}, errs.ForeignKeyViolation(err, pgErr)
-		}
-		return DTO.CategoryResponse{}, errs.Internal(err)
+		return DTO.CategoryResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapCreateRowToResponse(category), nil
@@ -65,11 +58,7 @@ func (s *Service) GetAll(ctx context.Context) ([]DTO.CategoryResponse, *errs.App
 func (s *Service) Get(ctx context.Context, id int64) (DTO.CategoryResponse, *errs.AppError) {
 	category, err := s.q.GetCategory(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.CategoryResponse{}, errs.NotFound(err)
-		}
-
-		return DTO.CategoryResponse{}, errs.Internal(err)
+		return DTO.CategoryResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapGetRowToResponse(category), nil
@@ -88,16 +77,7 @@ func (s *Service) Update(ctx context.Context, id int64, request DTO.CategoryRequ
 
 	category, err := s.q.UpdateCategory(ctx, mapRequestToUpdateParams(id, request))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return DTO.CategoryResponse{}, errs.NotFound(err)
-		}
-		if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-			return DTO.CategoryResponse{}, errs.UniqueViolation(err, pgErr)
-		}
-		if pgErr, isForeignKeyViolation := errs.IsForeignKeyViolation(err); isForeignKeyViolation {
-			return DTO.CategoryResponse{}, errs.ForeignKeyViolation(err, pgErr)
-		}
-		return DTO.CategoryResponse{}, errs.Internal(err)
+		return DTO.CategoryResponse{}, errs.FromPgErr(err)
 	}
 
 	return mapUpdateRowToResponse(category), nil

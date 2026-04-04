@@ -65,13 +65,12 @@ func LogErrors() gin.HandlerFunc {
 			return
 		}
 
-		log.Printf("\n[ERRORS %d] %s %s", len(c.Errors), c.Request.Method, c.FullPath())
+		log.Printf("[ERRORS %d] %s %s", len(c.Errors), c.Request.Method, c.FullPath())
 
 		for i, e := range c.Errors {
 			log.Printf("  Error %d:", i+1)
 			logErrorRecursive(e.Err, "    ")
 		}
-		log.Printf("")
 	}
 }
 
