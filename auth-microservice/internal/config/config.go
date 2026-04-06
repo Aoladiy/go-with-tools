@@ -14,6 +14,8 @@ const (
 type Config struct {
 	AppPort int
 
+	LogLevel string
+
 	DbHost         string
 	DbPort         string
 	DbUsername     string
@@ -36,6 +38,8 @@ type Config struct {
 func (c *Config) LoadEnv() error {
 	appPort, appPortExists := os.LookupEnv("APP_PORT")
 
+	logLevel, logLevelExists := os.LookupEnv("LOG_LEVEL")
+
 	dbHost, dbHostExists := os.LookupEnv("DB_HOST")
 	dbPort, dbPortExists := os.LookupEnv("DB_PORT")
 	dbUsername, dbUsernameExists := os.LookupEnv("DB_USERNAME")
@@ -55,6 +59,10 @@ func (c *Config) LoadEnv() error {
 
 	if !appPortExists {
 		return errors.New("APP_PORT .env isn't set")
+	}
+
+	if !logLevelExists {
+		return errors.New("LOG_LEVEL .env isn't set")
 	}
 
 	if !dbHostExists {
@@ -136,6 +144,7 @@ func (c *Config) LoadEnv() error {
 	}
 
 	c.AppPort = intAppPort
+	c.LogLevel = logLevel
 
 	c.DbHost = dbHost
 	c.DbPort = dbPort

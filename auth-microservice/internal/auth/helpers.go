@@ -6,7 +6,6 @@ import (
 
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/errs"
 	"github.com/Aoladiy/go-with-tools/gen"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 

@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/Aoladiy/go-with-tools/gen"
 	"github.com/Aoladiy/go-with-tools/internal/auth"
 	"github.com/Aoladiy/go-with-tools/internal/config"
 	"github.com/Aoladiy/go-with-tools/internal/errs"
+	uuid2 "github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,25 +62,54 @@ func AuthByJWT(client gen.AuthMicroserviceClient, jwtSecret string) gin.HandlerF
 
 func LogErrors() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		uuid := uuid2.New().String()
+		c.Set("request_id", uuid)
+
+		start := time.Now()
 		c.Next()
+		finish := time.Since(start)
 		if len(c.Errors) == 0 {
 			return
 		}
-
-		log.Printf("[ERRORS %d] %s %s", len(c.Errors), c.Request.Method, c.FullPath())
-
-		for i, e := range c.Errors {
-			log.Printf("  Error %d:", i+1)
-			logErrorRecursive(e.Err, "    ")
+		for _, e := range c.Errors {
+			var appErr *errs.AppError
+			if !errors.As(e, &appErr) {
+				logError(uuid, c.Request.Method, c.FullPath(), errs.Internal(fmt.Errorf("error is not of type *errs.AppError: %w", e.Err)))
+				continue
+			}
+			if appErr.Code == errs.InternalErrCode {
+				logError(uuid, c.Request.Method, c.FullPath(), appErr.Err)
+				continue
+			}
+			logInfo(uuid, c.Request.Method, c.FullPath(), appErr.Err)
 		}
+		logDebug(uuid, c.Request.Method, c.FullPath(), finish)
 	}
 }
 
-func logErrorRecursive(err error, indent string) {
-	if err == nil {
-		return
-	}
+func logError(requestId, method, path string, err error) {
+	slog.Error("failed request",
+		"request_id", requestId,
+		"method", method,
+		"path", path,
+		"err", err,
+	)
+}
 
-	log.Printf("%s -> %s", indent, err.Error())
-	logErrorRecursive(errors.Unwrap(err), indent+"  ")
+func logInfo(requestId, method, path string, err error) {
+	slog.Info("failed request",
+		"request_id", requestId,
+		"method", method,
+		"path", path,
+		"err", err,
+	)
+}
+
+func logDebug(requestId, method, path string, duration time.Duration) {
+	slog.Debug("request finished",
+		"request_id", requestId,
+		"method", method,
+		"path", path,
+		"duration", duration,
+	)
 }

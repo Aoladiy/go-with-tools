@@ -4,10 +4,11 @@ type Code int
 
 const (
 	InternalErrCode Code = iota
-	NotFoundErrCode
-	BadRequestErrCode
 	UnauthorizedErrCode
+	BadRequestErrCode
+	UnprocessableEntityErrCode
 	ConflictErrCode
+	NotFoundErrCode
 )
 
 type AppError struct {
@@ -47,9 +48,9 @@ func BadRequest(err error) *AppError {
 	}
 }
 
-func NotFound(err error) *AppError {
+func UnprocessableEntity(err error) *AppError {
 	return &AppError{
-		Code: NotFoundErrCode,
+		Code: UnprocessableEntityErrCode,
 		Err:  err,
 	}
 }
@@ -57,6 +58,13 @@ func NotFound(err error) *AppError {
 func Conflict(err error) *AppError {
 	return &AppError{
 		Code: ConflictErrCode,
+		Err:  err,
+	}
+}
+
+func NotFound(err error) *AppError {
+	return &AppError{
+		Code: NotFoundErrCode,
 		Err:  err,
 	}
 }

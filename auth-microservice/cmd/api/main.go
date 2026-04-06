@@ -7,6 +7,7 @@ import (
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/config"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/database"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/database/queries"
+	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/logs"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/server"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logs.Init(c)
 	rdb := cache.New(c)
 	db := database.New(c)
 	q := queries.New(db.GetPool())

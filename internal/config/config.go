@@ -14,6 +14,8 @@ type Config struct {
 	AppHost string
 	AppPort int
 
+	LogLevel string
+
 	AuthHost string
 	AuthPort int
 
@@ -32,6 +34,8 @@ func (c *Config) LoadEnv() error {
 	appPort, appPortExists := os.LookupEnv("APP_PORT")
 	authHost, authHostExists := os.LookupEnv("AUTH_HOST")
 	authPort, authPortExists := os.LookupEnv("AUTH_PORT")
+
+	logLevel, logLevelExists := os.LookupEnv("LOG_LEVEL")
 
 	dbHost, dbHostExists := os.LookupEnv("DB_HOST")
 	dbPort, dbPortExists := os.LookupEnv("DB_PORT")
@@ -54,6 +58,10 @@ func (c *Config) LoadEnv() error {
 	}
 	if !authPortExists {
 		return errors.New("AUTH_PORT .env isn't set")
+	}
+
+	if !logLevelExists {
+		return errors.New("LOG_LEVEL .env isn't set")
 	}
 
 	if !dbHostExists {
@@ -94,6 +102,8 @@ func (c *Config) LoadEnv() error {
 
 	c.AuthHost = authHost
 	c.AuthPort = intAuthPort
+
+	c.LogLevel = logLevel
 
 	c.DbHost = dbHost
 	c.DbPort = dbPort

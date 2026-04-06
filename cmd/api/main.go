@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 
 	_ "github.com/Aoladiy/go-with-tools/cmd/api/docs"
 	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/logs"
 	"github.com/Aoladiy/go-with-tools/internal/server"
 )
 
@@ -23,7 +25,7 @@ func gracefulShutdown(apiServer *server.Server, done chan bool) {
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
+	slog.Info("shutting down gracefully, press Ctrl+C again to force")
 	stop() // Allow Ctrl+C to force shutdown
 
 	// The context is used to inform the server it has 5 seconds to finish
@@ -32,10 +34,10 @@ func gracefulShutdown(apiServer *server.Server, done chan bool) {
 	defer cancel()
 	err := apiServer.ShutdownServer(ctx)
 	if err != nil {
-		log.Printf("Server forced to shutdown with error: %v", err)
+		slog.Info(fmt.Sprintf("Server forced to shutdown with error: %v", err))
 	}
 
-	log.Println("Server exiting")
+	slog.Info("Server exiting")
 
 	// Notify the main goroutine that the shutdown is complete
 	done <- true
@@ -58,6 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("cannot load env variables", err)
 	}
+	logs.Init(c)
 	newServer := server.New(c)
 
 	// Create a done channel to signal when the shutdown is complete
@@ -73,5 +76,5 @@ func main() {
 
 	// Wait for the graceful shutdown to complete
 	<-done
-	log.Println("Graceful shutdown complete.")
+	slog.Info("Graceful shutdown complete.")
 }

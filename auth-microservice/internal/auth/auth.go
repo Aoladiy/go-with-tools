@@ -39,11 +39,11 @@ func New(q *queries.Queries, rdb *redis.Client, p *pgxpool.Pool, c config.Config
 
 func (a *Microservice) SignUp(ctx context.Context, request *gen.SignUpRequest) (*gen.JWTResponse, error) {
 	if len(request.Password) < 8 {
-		return nil, errs.BadRequest(errors.New("password must be at least 8 characters")).ToGRPC()
+		return nil, errs.BadRequest(errors.New("password must be at least 8 characters"))
 	}
 	password, err := bcrypt.GenerateFromPassword([]byte(request.Password), 12)
 	if err != nil {
-		return nil, errs.Internal(err).ToGRPC()
+		return nil, errs.Internal(err)
 	}
 
 	var jwtResponse gen.JWTResponse
@@ -53,10 +53,7 @@ func (a *Microservice) SignUp(ctx context.Context, request *gen.SignUpRequest) (
 			PasswordHash: string(password),
 		})
 		if err != nil {
-			if pgErr, isUniqueViolation := errs.IsUniqueViolation(err); isUniqueViolation {
-				return errs.UniqueViolation(err, pgErr)
-			}
-			return errs.Internal(err)
+			return errs.FromPgErr(err)
 		}
 		var appErr *errs.AppError
 		jwtResponse, appErr = generateJWTResponse(a.c.JwtSecret, strconv.FormatInt(adminUser.ID, 10))
@@ -66,7 +63,7 @@ func (a *Microservice) SignUp(ctx context.Context, request *gen.SignUpRequest) (
 		return nil
 	})
 	if appErr != nil {
-		return nil, appErr.ToGRPC()
+		return nil, appErr
 	}
 	return &jwtResponse, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/config"
@@ -75,7 +76,7 @@ func (s *service) Health() map[string]string {
 
 func (s *service) Close() {
 	s.db.Close()
-	log.Printf("Disconnected from database: %s", s.c.DbDatabaseName)
+	slog.Info(fmt.Sprintf("Disconnected from database: %s", s.c.DbDatabaseName))
 }
 
 func (s *service) GetPool() *pgxpool.Pool {
