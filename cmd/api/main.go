@@ -16,7 +16,7 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/server"
 )
 
-func gracefulShutdown(apiServer *server.Server, done chan bool) {
+func gracefulShutdown(apiServer *server.Server, done, kafkaDone chan bool, kafkaCancel context.CancelFunc) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -26,6 +26,8 @@ func gracefulShutdown(apiServer *server.Server, done chan bool) {
 
 	slog.Info("shutting down gracefully, press Ctrl+C again to force")
 	stop() // Allow Ctrl+C to force shutdown
+	kafkaCancel()
+	<-kafkaDone
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
@@ -61,14 +63,14 @@ func main() {
 	}
 	logs.Init(c)
 	newServer := server.New(c)
-	k:= messaging.New(c)
-	k.ReadMessages()
-
+	k := messaging.New(c)
+	ctx, kafkaCancel := context.WithCancel(context.Background())
+	kafkaDone := k.ReadMessages(ctx)
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(newServer, done)
+	go gracefulShutdown(newServer, done, kafkaDone, kafkaCancel)
 
 	newServer.Serve()
 

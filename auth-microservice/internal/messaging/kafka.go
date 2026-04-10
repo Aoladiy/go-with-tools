@@ -19,11 +19,11 @@ const (
 )
 
 type Kafka struct {
-	wAuthAdminUserSignedIn kafka.Writer
+	wAuthAdminUserSignedIn *kafka.Writer
 }
 
 func New(c config.Config) *Kafka {
-	return &Kafka{wAuthAdminUserSignedIn: kafka.Writer{Addr: kafka.TCP(c.KafkaAddr), Topic: AuthAdminUserSignedIn}}
+	return &Kafka{wAuthAdminUserSignedIn: &kafka.Writer{Addr: kafka.TCP(c.KafkaAddr), Topic: AuthAdminUserSignedIn}}
 }
 
 func Init(c config.Config) {

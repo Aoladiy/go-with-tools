@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	AuthAdminUserSignedIn = "auth.admin_user.signed_in"
+	AuthAdminUserSignedIn        = "auth.admin_user.signed_in"
+	AuthAdminUserSignedInGroupId = "main-microservice"
 )
 
 type Kafka struct {
@@ -25,14 +26,28 @@ func New(c config.Config) *Kafka {
 	rAuthAdminUserSignedIn := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{c.KafkaAddr},
 		Topic:   AuthAdminUserSignedIn,
+		GroupID: AuthAdminUserSignedInGroupId,
 	})
-	return &Kafka{errch: make(chan *errs.AppError), rAuthAdminUserSignedIn: rAuthAdminUserSignedIn}
+	return &Kafka{errch: make(chan *errs.AppError, 100), rAuthAdminUserSignedIn: rAuthAdminUserSignedIn}
 }
 
-func (k *Kafka) ReadMessages() {
-	go k.ReadAuthAdminUserSignedInEvent(context.Background(), k.errch)
+func (k *Kafka) ReadMessages(ctx context.Context) chan bool {
+	done := make(chan bool)
+	go k.ReadAuthAdminUserSignedInEvent(ctx, k.errch)
 
 	go k.logErrors()
+	go k.GracefulShutdown(ctx, done)
+	return done
+}
+
+func (k *Kafka) GracefulShutdown(ctx context.Context, done chan bool) {
+	<-ctx.Done()
+	err := k.rAuthAdminUserSignedIn.Close()
+	if err != nil {
+		slog.Error("cannot close reader rAuthAdminUserSignedIn", "error", err)
+	}
+	slog.Info("kafka's rAuthAdminUserSignedIn closed successfully")
+	done <- true
 }
 
 func (k *Kafka) logErrors() {
@@ -45,8 +60,11 @@ func (k *Kafka) logErrors() {
 
 func (k *Kafka) ReadAuthAdminUserSignedInEvent(ctx context.Context, errch chan *errs.AppError) {
 	for {
-		msg, err := k.rAuthAdminUserSignedIn.ReadMessage(ctx)
+		msg, err := k.rAuthAdminUserSignedIn.FetchMessage(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			errch <- errs.Internal(fmt.Errorf("ReadAuthAdminUserSignedInEvent: %w", err))
 			continue
 		}
@@ -56,10 +74,15 @@ func (k *Kafka) ReadAuthAdminUserSignedInEvent(ctx context.Context, errch chan *
 			errch <- errs.Internal(fmt.Errorf("ReadAuthAdminUserSignedInEvent: %w", err))
 			continue
 		}
-		if err == nil {
-			slog.Info("successful ReadAuthAdminUserSignedInEvent",
-				"accessToken", tmp.AccessToken,
-				"refreshToken", tmp.RefreshToken)
+		slog.Info("successful ReadAuthAdminUserSignedInEvent",
+			"accessToken", tmp.AccessToken,
+			"refreshToken", tmp.RefreshToken)
+		err = k.rAuthAdminUserSignedIn.CommitMessages(ctx, msg)
+		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			errch <- errs.Internal(fmt.Errorf("ReadAuthAdminUserSignedInEvent: %w", err))
 		}
 	}
 }
