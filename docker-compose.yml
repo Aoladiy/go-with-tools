@@ -14,6 +14,7 @@ services:
       - "DB_HOST=db"
       - "DB_PORT=5432"
       - "REDIS_ADDR=cache:6379"
+      - "KAFKA_ADDR=kafka:9092"
     volumes:
       - .:/www/air
       - go_mod_cache:/go/pkg/mod
@@ -28,11 +29,11 @@ services:
     env_file:
       - .env
     environment:
-      - "APP_HOST=0.0.0.0"
       - "APP_PORT=${AUTH_PORT_AIR}"
       - "DB_HOST=db"
       - "DB_PORT=5432"
       - "REDIS_ADDR=cache:6379"
+      - "KAFKA_ADDR=kafka:9092"
     volumes:
       - .:/www/air
       - auth_go_mod_cache:/go/pkg/mod
@@ -53,6 +54,7 @@ services:
       - "DB_HOST=db"
       - "DB_PORT=5432"
       - "REDIS_ADDR=cache:6379"
+      - "KAFKA_ADDR=kafka:9092"
     depends_on:
       db:
         condition: service_healthy
@@ -90,6 +92,8 @@ services:
       - "GOOSE_DBSTRING=postgres://${DB_USERNAME}:${DB_PASSWORD}@db:5432/${DB_DATABASE}"
     volumes:
       - .:/www/app
+      - migrate_go_mod_cache:/go/pkg/mod
+      - migrate_go_build_cache:/root/.cache/go-build
     depends_on:
       db:
         condition: service_healthy
@@ -97,9 +101,27 @@ services:
       sh -c "go install github.com/pressly/goose/v3/cmd/goose@latest && goose up"
     profiles:
       - tools
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
 volumes:
   cache_volume:
   go_mod_cache:
   go_build_cache:
   auth_go_mod_cache:
   auth_go_build_cache:
+  migrate_go_mod_cache:
+  migrate_go_build_cache:
+  kafka_data:

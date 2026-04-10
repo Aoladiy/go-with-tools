@@ -27,6 +27,8 @@ type Config struct {
 	DbSchema       string
 
 	JwtSecret string
+
+	KafkaAddr string
 }
 
 func (c *Config) LoadEnv() error {
@@ -45,6 +47,8 @@ func (c *Config) LoadEnv() error {
 	dbSchema, dbSchemaExists := os.LookupEnv("DB_SCHEMA")
 
 	jwtSecret, jwtSecretExists := os.LookupEnv("JWT_SECRET")
+
+	kafkaAddr, kafkaAddrExists := os.LookupEnv("KAFKA_ADDR")
 
 	if !appHostExists {
 		return errors.New("APP_HOST .env isn't set")
@@ -87,6 +91,10 @@ func (c *Config) LoadEnv() error {
 		return errors.New("JWT_SECRET .env isn't set")
 	}
 
+	if !kafkaAddrExists {
+		return errors.New("KAFKA_ADDR .env isn't set")
+	}
+
 	intAppPort, err := strconv.Atoi(appPort)
 	if err != nil {
 		return err
@@ -113,6 +121,8 @@ func (c *Config) LoadEnv() error {
 	c.DbSchema = dbSchema
 
 	c.JwtSecret = jwtSecret
+
+	c.KafkaAddr = kafkaAddr
 
 	return nil
 }

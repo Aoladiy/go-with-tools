@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,11 +12,10 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/brand"
 	"github.com/Aoladiy/go-with-tools/internal/category"
 	"github.com/Aoladiy/go-with-tools/internal/config"
+	"github.com/Aoladiy/go-with-tools/internal/database"
 	"github.com/Aoladiy/go-with-tools/internal/database/queries"
 	"github.com/Aoladiy/go-with-tools/internal/product"
 	_ "github.com/joho/godotenv/autoload"
-
-	"github.com/Aoladiy/go-with-tools/internal/database"
 )
 
 type Server struct {
@@ -62,4 +62,11 @@ func (s *Server) ShutdownServer(ctx context.Context) error {
 	}
 	s.db.Close()
 	return nil
+}
+
+func (s *Server) Serve() {
+	err := s.Server.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		panic(fmt.Sprintf("http newServer error: %s", err))
+	}
 }

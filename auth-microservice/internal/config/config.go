@@ -33,6 +33,8 @@ type Config struct {
 	RdbMinIdleConns int
 
 	JwtSecret string
+
+	KafkaAddr string
 }
 
 func (c *Config) LoadEnv() error {
@@ -55,6 +57,9 @@ func (c *Config) LoadEnv() error {
 	rdbReadTimeout, rdbReadTimeoutExists := os.LookupEnv("REDIS_READ_TIMEOUT")
 	rdbWriteTimeout, rdbWriteTimeoutExists := os.LookupEnv("REDIS_WRITE_TIMEOUT")
 	rdbMinIdleConns, rdbMinIdleConnsExists := os.LookupEnv("REDIS_MIN_IDLE_CONNS")
+
+	kafkaAddr, kafkaAddrExists := os.LookupEnv("KAFKA_ADDR")
+
 	jwtSecret, jwtSecretExists := os.LookupEnv("JWT_SECRET")
 
 	if !appPortExists {
@@ -113,6 +118,10 @@ func (c *Config) LoadEnv() error {
 		return errors.New("JWT_SECRET .env isn't set")
 	}
 
+	if !kafkaAddrExists {
+		return errors.New("KAFKA_ADDR .env isn't set")
+	}
+
 	intAppPort, err := strconv.Atoi(appPort)
 	if err != nil {
 		return err
@@ -163,6 +172,8 @@ func (c *Config) LoadEnv() error {
 	c.RdbMinIdleConns = intRdbMinIdleConns
 
 	c.JwtSecret = jwtSecret
+
+	c.KafkaAddr = kafkaAddr
 
 	return nil
 }

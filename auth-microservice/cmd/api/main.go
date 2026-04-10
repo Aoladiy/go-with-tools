@@ -8,6 +8,7 @@ import (
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/database"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/database/queries"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/logs"
+	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/messaging"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/server"
 )
 
@@ -21,6 +22,8 @@ func main() {
 	rdb := cache.New(c)
 	db := database.New(c)
 	q := queries.New(db.GetPool())
-	s := server.NewServer(c, db, q, rdb)
+	messaging.Init(c)
+	k := messaging.New(c)
+	s := server.NewServer(c, db, q, rdb, k)
 	s.Serve()
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/database/queries"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/errs"
 	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/helpers"
+	"github.com/Aoladiy/go-with-tools-auth-microservice/internal/messaging"
 	"github.com/Aoladiy/go-with-tools/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,10 +32,11 @@ type Microservice struct {
 	rdb *redis.Client
 	p   *pgxpool.Pool
 	c   config.Config
+	k *messaging.Kafka
 }
 
-func New(q *queries.Queries, rdb *redis.Client, p *pgxpool.Pool, c config.Config) *Microservice {
-	return &Microservice{q: q, rdb: rdb, p: p, c: c}
+func New(q *queries.Queries, rdb *redis.Client, p *pgxpool.Pool, c config.Config, k *messaging.Kafka) *Microservice {
+	return &Microservice{q: q, rdb: rdb, p: p, c: c, k: k}
 }
 
 func (a *Microservice) SignUp(ctx context.Context, request *gen.SignUpRequest) (*gen.JWTResponse, error) {
@@ -83,6 +85,11 @@ func (a *Microservice) SignIn(ctx context.Context, request *gen.SignInRequest) (
 		return nil, errs.Unauthorized(fmt.Errorf("wrong password %w", err))
 	}
 	jwtResponse, appErr := generateJWTResponse(a.c.JwtSecret, strconv.FormatInt(adminUser.ID, 10))
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	appErr = a.k.WriteAuthAdminUserSignedInEvent(ctx, &jwtResponse)
 	if appErr != nil {
 		return nil, appErr
 	}

@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"log/slog"
-	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
@@ -14,6 +12,7 @@ import (
 	_ "github.com/Aoladiy/go-with-tools/cmd/api/docs"
 	"github.com/Aoladiy/go-with-tools/internal/config"
 	"github.com/Aoladiy/go-with-tools/internal/logs"
+	"github.com/Aoladiy/go-with-tools/internal/messaging"
 	"github.com/Aoladiy/go-with-tools/internal/server"
 )
 
@@ -62,6 +61,8 @@ func main() {
 	}
 	logs.Init(c)
 	newServer := server.New(c)
+	k:= messaging.New(c)
+	k.ReadMessages()
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
@@ -69,10 +70,7 @@ func main() {
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(newServer, done)
 
-	err = newServer.Server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		panic(fmt.Sprintf("http newServer error: %s", err))
-	}
+	newServer.Serve()
 
 	// Wait for the graceful shutdown to complete
 	<-done
