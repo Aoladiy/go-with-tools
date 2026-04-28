@@ -14,6 +14,9 @@ type Config struct {
 	AppHost string
 	AppPort int
 
+	MetricsHost string
+	MetricsPort int
+
 	LogLevel string
 
 	AuthHost string
@@ -34,6 +37,8 @@ type Config struct {
 func (c *Config) LoadEnv() error {
 	appHost, appHostExists := os.LookupEnv("APP_HOST")
 	appPort, appPortExists := os.LookupEnv("APP_PORT")
+	metricsHost, metricsHostExists := os.LookupEnv("METRICS_HOST")
+	metricsPort, metricsPortExists := os.LookupEnv("METRICS_PORT")
 	authHost, authHostExists := os.LookupEnv("AUTH_HOST")
 	authPort, authPortExists := os.LookupEnv("AUTH_PORT")
 
@@ -55,6 +60,13 @@ func (c *Config) LoadEnv() error {
 	}
 	if !appPortExists {
 		return errors.New("APP_PORT .env isn't set")
+	}
+
+	if !metricsHostExists {
+		return errors.New("METRICS_HOST .env isn't set")
+	}
+	if !metricsPortExists {
+		return errors.New("METRICS_PORT .env isn't set")
 	}
 
 	if !authHostExists {
@@ -100,6 +112,11 @@ func (c *Config) LoadEnv() error {
 		return err
 	}
 
+	intMetricsPort, err := strconv.Atoi(metricsPort)
+	if err != nil {
+		return err
+	}
+
 	intAuthPort, err := strconv.Atoi(authPort)
 	if err != nil {
 		return err
@@ -107,6 +124,9 @@ func (c *Config) LoadEnv() error {
 
 	c.AppHost = appHost
 	c.AppPort = intAppPort
+
+	c.MetricsHost = metricsHost
+	c.MetricsPort = intMetricsPort
 
 	c.AuthHost = authHost
 	c.AuthPort = intAuthPort

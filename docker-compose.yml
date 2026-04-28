@@ -4,11 +4,14 @@ services:
     working_dir: /www/air
     ports:
       - "${APP_PORT_AIR}:${APP_PORT_AIR}"
+      - "${METRICS_PORT_AIR}:${METRICS_PORT_AIR}"
     env_file:
       - .env
     environment:
       - "APP_HOST=0.0.0.0"
       - "APP_PORT=${APP_PORT_AIR}"
+      - "METRICS_HOST=0.0.0.0"
+      - "METRICS_PORT=${METRICS_PORT_AIR}"
       - "AUTH_HOST=auth-air"
       - "AUTH_PORT=${AUTH_PORT_AIR}"
       - "DB_HOST=db"

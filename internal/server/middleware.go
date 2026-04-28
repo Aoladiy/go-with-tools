@@ -12,6 +12,7 @@ import (
 	"github.com/Aoladiy/go-with-tools/internal/auth"
 	"github.com/Aoladiy/go-with-tools/internal/config"
 	"github.com/Aoladiy/go-with-tools/internal/errs"
+	"github.com/Aoladiy/go-with-tools/internal/metrics"
 	uuid2 "github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -68,9 +69,12 @@ func LogErrors() gin.HandlerFunc {
 		start := time.Now()
 		c.Next()
 		finish := time.Since(start)
+		metrics.RequestsTotal.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(c.Writer.Status())).Inc()
+		metrics.RequestDurations.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(c.Writer.Status())).Observe(finish.Seconds())
 		if len(c.Errors) == 0 {
 			return
 		}
+		metrics.ErrorsTotal.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(c.Writer.Status())).Inc()
 		for _, e := range c.Errors {
 			var appErr *errs.AppError
 			if !errors.As(e, &appErr) {
