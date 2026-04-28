@@ -119,6 +119,22 @@ services:
       - kafka_data:/var/lib/kafka/data
     ports:
       - "9092:9092"
+  prometheus-dev:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-dev.yml:/etc/prometheus/prometheus.yml
+    profiles:
+      - dev
+  prometheus-prod:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-prod.yml:/etc/prometheus/prometheus.yml
+    profiles:
+      - prod
 volumes:
   cache_volume:
   go_mod_cache:
